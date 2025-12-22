@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Questions - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="practice-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Practice Container -->
+    <div class="practice-container">
+        <!-- Header -->
+        <div class="practice-header">
+            <button class="btn btn-outline" onclick="exitPractice()">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 18L2 10L10 2L11.4 3.4L5.8 9H18V11H5.8L11.4 16.6L10 18Z"/>
+                </svg>
+                Exit
+            </button>
+            <div class="practice-info">
+                <h3 id="practice-title">Loading...</h3>
+                <p id="practice-subtitle"></p>
+            </div>
+            <div class="practice-stats">
+                <span id="question-counter">0 / 0</span>
+            </div>
+        </div>
+
+        <!-- Question Display -->
+        <div class="question-container">
+            <div class="question-card">
+                <div class="question-header">
+                    <span class="question-type-badge" id="question-type">MCQ</span>
+                    <span class="question-number">Question <span id="current-question-num">1</span></span>
+                </div>
+
+                <div class="question-content">
+                    <p class="question-text" id="question-text">Loading question...</p>
+                    
+                    <div id="question-image-container" style="display: none;">
+                        <button class="btn btn-text" onclick="loadQuestionImage()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M4 3H16C17.1 3 18 3.9 18 5V15C18 16.1 17.1 17 16 17H4C2.9 17 2 16.1 2 15V5C2 3.9 2.9 3 4 3ZM5 14L8 11L10 13L13 9L15 11V14H5Z"/>
+                            </svg>
+                            Load Diagram
+                        </button>
+                        <div id="question-image" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- MCQ Options -->
+                <div class="options-container" id="mcq-options" style="display: none;">
+                    <div class="option" data-option="A" onclick="selectOption('A')">
+                        <span class="option-label">A</span>
+                        <span class="option-text"></span>
+                    </div>
+                    <div class="option" data-option="B" onclick="selectOption('B')">
+                        <span class="option-label">B</span>
+                        <span class="option-text"></span>
+                    </div>
+                    <div class="option" data-option="C" onclick="selectOption('C')">
+                        <span class="option-label">C</span>
+                        <span class="option-text"></span>
+                    </div>
+                    <div class="option" data-option="D" onclick="selectOption('D')">
+                        <span class="option-label">D</span>
+                        <span class="option-text"></span>
+                    </div>
+                </div>
+
+                <!-- Numerical Input -->
+                <div class="numerical-container" id="numerical-input" style="display: none;">
+                    <label for="numerical-answer">Enter your answer:</label>
+                    <input type="number" id="numerical-answer" step="any" placeholder="Enter numerical value">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="question-actions">
+                    <button class="btn btn-outline" onclick="skipQuestion()">Skip</button>
+                    <button class="btn btn-primary" onclick="submitAnswer()" id="submit-btn">Submit Answer</button>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div class="result-card" id="result-card" style="display: none;">
+                <div class="result-icon" id="result-icon"></div>
+                <h3 id="result-title"></h3>
+                <div class="result-details">
+                    <p><strong>Your Answer:</strong> <span id="user-answer"></span></p>
+                    <p><strong>Correct Answer:</strong> <span id="correct-answer"></span></p>
+                </div>
+                <div class="result-question">
+                    <p class="question-text" id="result-question-text"></p>
+                    <div id="result-options" class="options-container"></div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="nextQuestion()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/practice.js"></script>
+</body>
+</html>

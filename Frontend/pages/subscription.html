@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Plan - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="subscription-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="subscription-container">
+        <div class="subscription-header">
+            <h1>Choose Your Plan</h1>
+            <p>Select the perfect plan to ace your exam preparation</p>
+        </div>
+
+        <!-- Gift Code Section -->
+        <div class="gift-code-section">
+            <button class="btn btn-outline" onclick="toggleGiftCode()">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 2L12.5 7L18 8L14 12L15 18L10 15L5 18L6 12L2 8L7.5 7L10 2Z"/>
+                </svg>
+                Have a Gift Code?
+            </button>
+            <div id="gift-code-form" class="gift-code-form" style="display: none;">
+                <input type="text" id="giftCodeInput" placeholder="Enter 12-character code" maxlength="12">
+                <button class="btn btn-primary" onclick="applyGiftCode()">Apply</button>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="pricing-card free-card">
+                <div class="plan-badge">Free</div>
+                <div class="plan-header">
+                    <h2>Free</h2>
+                    <div class="plan-price">
+                        <span class="price">₹0</span>
+                        <span class="period">/forever</span>
+                    </div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span>50 Questions Daily</span>
+                    </div>
+                    <div class="feature disabled">
+                        <svg class="icon-cross" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15.3 4.7L10 10L4.7 4.7L3.3 6.1L8.6 11.4L3.3 16.7L4.7 18.1L10 12.8L15.3 18.1L16.7 16.7L11.4 11.4L16.7 6.1L15.3 4.7Z"/>
+                        </svg>
+                        <span>No Chapter Tests</span>
+                    </div>
+                    <div class="feature disabled">
+                        <svg class="icon-cross" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15.3 4.7L10 10L4.7 4.7L3.3 6.1L8.6 11.4L3.3 16.7L4.7 18.1L10 12.8L15.3 18.1L16.7 16.7L11.4 11.4L16.7 6.1L15.3 4.7Z"/>
+                        </svg>
+                        <span>No Mock Tests</span>
+                    </div>
+                    <div class="feature disabled">
+                        <svg class="icon-cross" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15.3 4.7L10 10L4.7 4.7L3.3 6.1L8.6 11.4L3.3 16.7L4.7 18.1L10 12.8L15.3 18.1L16.7 16.7L11.4 11.4L16.7 6.1L15.3 4.7Z"/>
+                        </svg>
+                        <span>No Formulas & Flashcards</span>
+                    </div>
+                </div>
+                <button class="btn btn-outline btn-block" onclick="selectPlan('free')">Continue with Free</button>
+            </div>
+
+            <!-- Silver Plan -->
+            <div class="pricing-card silver-card">
+                <div class="plan-badge silver-badge">Silver</div>
+                <div class="plan-header">
+                    <h2>Silver</h2>
+                    <div class="plan-tabs">
+                        <button class="tab-btn active" data-plan="silver" data-duration="1M">1 Month</button>
+                        <button class="tab-btn" data-plan="silver" data-duration="6M">6 Months</button>
+                        <button class="tab-btn" data-plan="silver" data-duration="1Y">1 Year</button>
+                    </div>
+                    <div class="plan-price">
+                        <span class="original-price">₹100</span>
+                        <span class="price">₹49</span>
+                        <span class="period">/month</span>
+                    </div>
+                    <div class="savings-badge">Save 51%</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span>200 Questions Daily</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span>10 Chapter Tests Daily</span>
+                    </div>
+                    <div class="feature disabled">
+                        <svg class="icon-cross" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15.3 4.7L10 10L4.7 4.7L3.3 6.1L8.6 11.4L3.3 16.7L4.7 18.1L10 12.8L15.3 18.1L16.7 16.7L11.4 11.4L16.7 6.1L15.3 4.7Z"/>
+                        </svg>
+                        <span>No Mock Tests</span>
+                    </div>
+                    <div class="feature disabled">
+                        <svg class="icon-cross" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M15.3 4.7L10 10L4.7 4.7L3.3 6.1L8.6 11.4L3.3 16.7L4.7 18.1L10 12.8L15.3 18.1L16.7 16.7L11.4 11.4L16.7 6.1L15.3 4.7Z"/>
+                        </svg>
+                        <span>No Formulas & Flashcards</span>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="proceedToPayment('silver', '1M', 49)">
+                    Proceed to Payment
+                </button>
+            </div>
+
+            <!-- Gold Plan (Recommended) -->
+            <div class="pricing-card gold-card recommended">
+                <div class="recommended-badge">RECOMMENDED</div>
+                <div class="plan-badge gold-badge">Gold</div>
+                <div class="plan-header">
+                    <h2>Gold</h2>
+                    <div class="plan-tabs">
+                        <button class="tab-btn active" data-plan="gold" data-duration="1M">1 Month</button>
+                        <button class="tab-btn" data-plan="gold" data-duration="6M">6 Months</button>
+                        <button class="tab-btn" data-plan="gold" data-duration="1Y">1 Year</button>
+                    </div>
+                    <div class="plan-price">
+                        <span class="original-price">₹600</span>
+                        <span class="price">₹299</span>
+                        <span class="period">/month</span>
+                    </div>
+                    <div class="savings-badge">Save 50% • Best Value!</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span><strong>5000 Questions Daily</strong></span>
+                    </div>
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span><strong>50 Chapter Tests Daily</strong></span>
+                    </div>
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span><strong>8 Mock Tests Daily</strong></span>
+                    </div>
+                    <div class="feature">
+                        <svg class="icon-check" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M16.7 4.3L7 14L3.3 10.3L4.7 8.9L7 11.2L15.3 2.9L16.7 4.3Z"/>
+                        </svg>
+                        <span><strong>All Formulas & Flashcards</strong></span>
+                    </div>
+                </div>
+                <button class="btn btn-gold btn-block" onclick="proceedToPayment('gold', '1M', 299)">
+                    Proceed to Payment
+                </button>
+            </div>
+        </div>
+
+        <!-- Payment Modal -->
+        <div id="payment-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Complete Payment</h3>
+                    <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="payment-details"></div>
+                    <div id="razorpay-button"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/subscription.js"></script>
+</body>
+</html>

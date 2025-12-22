@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE Dashboard - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="dashboard-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40">
+                    <path d="M20 4L36 12V28L20 36L4 28V12L20 4Z" stroke="#6366f1" stroke-width="2" fill="none"/>
+                    <text x="20" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#6366f1">Z</text>
+                </svg>
+            </div>
+            <div class="header-title">
+                <h1>JEE 2026</h1>
+                <p id="user-greeting">Welcome back!</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="quick-links">
+                <button class="icon-btn" onclick="toggleTheme()" title="Toggle Theme">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 3V4M12 20V21M4 12H3M6.31412 6.31412L5.5 5.5M17.6859 6.31412L18.5 5.5M6.31412 17.69L5.5 18.5M17.6859 17.69L18.5 18.5M21 12H20M16 12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12C8 9.79086 9.79086 8 12 8C14.2091 8 16 9.79086 16 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="subscription-badge" id="subscription-badge">
+                    <span class="badge-icon">⭐</span>
+                    <span id="subscription-type">Free</span>
+                </div>
+                <button class="icon-btn" onclick="openAccountMenu()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Account Menu Dropdown -->
+    <div id="account-menu" class="account-menu">
+        <div class="account-info">
+            <div class="account-avatar">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="#6366f1">
+                    <circle cx="20" cy="20" r="20" fill="#e0e7ff"/>
+                    <path d="M20 20C22.21 20 24 18.21 24 16C24 13.79 22.21 12 20 12C17.79 12 16 13.79 16 16C16 18.21 17.79 20 20 20ZM20 22C17.33 22 12 23.34 12 26V28H28V26C28 23.34 22.67 22 20 22Z" fill="#6366f1"/>
+                </svg>
+            </div>
+            <div>
+                <h4 id="account-name">Student Name</h4>
+                <p id="account-email">email@example.com</p>
+            </div>
+        </div>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="window.location.href='/pages/subscription.html'">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 2L12.5 7L18 8L14 12L15 18L10 15L5 18L6 12L2 8L7.5 7L10 2Z"/>
+            </svg>
+            Upgrade Plan
+        </button>
+        <button class="menu-item" onclick="window.location.href='/pages/analytics.html'">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 18H18V16H2V18ZM4 14H6V10H4V14ZM8 14H10V6H8V14ZM12 14H14V8H12V14ZM16 14H18V4H16V14Z"/>
+            </svg>
+            Analytics
+        </button>
+        <button class="menu-item" onclick="window.location.href='/pages/feedback.html'">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M18 2H2C0.9 2 0 2.9 0 4V14C0 15.1 0.9 16 2 16H16L20 20V4C20 2.9 19.1 2 18 2Z"/>
+            </svg>
+            Feedback
+        </button>
+        <div class="menu-divider"></div>
+        <button class="menu-item logout" onclick="logout()">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M15 4H18V16H15V18H18C19.1 18 20 17.1 20 16V4C20 2.9 19.1 2 18 2H15V4ZM11 16L12.4 14.6L9.8 12H18V10H9.8L12.4 7.4L11 6L6 11L11 16Z"/>
+            </svg>
+            Logout
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <!-- Daily Limits Card -->
+        <div class="limits-card">
+            <h3>Today's Usage</h3>
+            <div class="limits-grid">
+                <div class="limit-item">
+                    <div class="limit-icon">📝</div>
+                    <div class="limit-info">
+                        <span class="limit-label">Questions</span>
+                        <span class="limit-value"><span id="questions-used">0</span> / <span id="questions-limit">50</span></span>
+                    </div>
+                    <div class="limit-bar">
+                        <div class="limit-progress" id="questions-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="limit-item">
+                    <div class="limit-icon">📋</div>
+                    <div class="limit-info">
+                        <span class="limit-label">Chapter Tests</span>
+                        <span class="limit-value"><span id="tests-used">0</span> / <span id="tests-limit">0</span></span>
+                    </div>
+                    <div class="limit-bar">
+                        <div class="limit-progress" id="tests-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="limit-item">
+                    <div class="limit-icon">🎯</div>
+                    <div class="limit-info">
+                        <span class="limit-label">Mock Tests</span>
+                        <span class="limit-value"><span id="mock-used">0</span> / <span id="mock-limit">0</span></span>
+                    </div>
+                    <div class="limit-bar">
+                        <div class="limit-progress" id="mock-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goal Section -->
+        <div class="goal-section" id="goal-section">
+            <div class="goal-content">
+                <h2>Your Goal</h2>
+                <p class="goal-text" id="life-ambition">Loading...</p>
+            </div>
+            <div class="goal-icon">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" stroke="#6366f1" stroke-width="3" fill="none"/>
+                    <path d="M50 20L60 40L80 42L65 57L68 77L50 67L32 77L35 57L20 42L40 40L50 20Z" fill="#6366f1"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Previous Year Questions Section -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h2>📚 Previous Year Questions</h2>
+                <p>Practice topic-wise questions from past exams</p>
+            </div>
+
+            <div class="filters-card">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="subject">Subject</label>
+                        <select id="subject" onchange="loadChapters()">
+                            <option value="">Select Subject</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="chapter">Chapter</label>
+                        <select id="chapter" onchange="loadTopics()" disabled>
+                            <option value="">Select Chapter</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="topic">Topic</label>
+                        <select id="topic" multiple disabled>
+                            <option value="all">All Topics</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="questionType">Question Type</label>
+                        <select id="questionType" multiple>
+                            <option value="all">All Types</option>
+                            <option value="MCQ">Multiple Choice</option>
+                            <option value="NUMERICAL">Numerical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="startPractice()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 5V15L15 10L8 5Z"/>
+                        </svg>
+                        Show Questions
+                    </button>
+                    <button class="btn btn-outline" onclick="generateSmallTest()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9 2C8.44772 2 8 2.44772 8 3C8 3.55228 8.44772 4 9 4H11C11.5523 4 12 3.55228 12 3C12 2.44772 11.5523 2 11 2H9ZM4 7C4 5.89543 4.89543 5 6 5H7V6C7 7.10457 7.89543 8 9 8H11C12.1046 8 13 7.10457 13 6V5H14C15.1046 5 16 5.89543 16 7V15C16 16.1046 15.1046 17 14 17H6C4.89543 17 4 16.1046 4 15V7Z"/>
+                        </svg>
+                        Generate Small Test (10Q)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Formula Sheets & Flashcards Section -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h2>📖 Formula Sheets & Flashcards</h2>
+                <p>Quick reference materials for revision</p>
+            </div>
+
+            <div class="formulas-card" id="formulas-section">
+                <div class="locked-overlay">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                        <path d="M45 25H42.5V17.5C42.5 10.6 36.9 5 30 5C23.1 5 17.5 10.6 17.5 17.5V25H15C12.25 25 10 27.25 10 30V47.5C10 50.25 12.25 52.5 15 52.5H45C47.75 52.5 50 50.25 50 47.5V30C50 27.25 47.75 25 45 25ZM30 40C27.25 40 25 37.75 25 35C25 32.25 27.25 30 30 30C32.75 30 35 32.25 35 35C35 37.75 32.75 40 30 40ZM37.5 25H22.5V17.5C22.5 13.35 25.85 10 30 10C34.15 10 37.5 13.35 37.5 17.5V25Z" fill="#9ca3af"/>
+                    </svg>
+                    <p>Upgrade to <strong>Gold</strong> to access formulas and flashcards</p>
+                    <button class="btn btn-primary" onclick="window.location.href='/pages/subscription.html'">
+                        Upgrade Now
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Mock Tests Section -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h2>🎯 Mock Tests</h2>
+                <p>Full-length tests simulating actual JEE Main exam</p>
+            </div>
+
+            <div class="mock-tests-card" id="mock-tests-section">
+                <div class="locked-overlay">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                        <path d="M45 25H42.5V17.5C42.5 10.6 36.9 5 30 5C23.1 5 17.5 10.6 17.5 17.5V25H15C12.25 25 10 27.25 10 30V47.5C10 50.25 12.25 52.5 15 52.5H45C47.75 52.5 50 50.25 50 47.5V30C50 27.25 47.75 25 45 25ZM30 40C27.25 40 25 37.75 25 35C25 32.25 27.25 30 30 30C32.75 30 35 32.25 35 35C35 37.75 32.75 40 30 40ZM37.5 25H22.5V17.5C22.5 13.35 25.85 10 30 10C34.15 10 37.5 13.35 37.5 17.5V25Z" fill="#9ca3af"/>
+                    </svg>
+                    <p>Upgrade to <strong>Gold</strong> to access mock tests</p>
+                    <button class="btn btn-primary" onclick="window.location.href='/pages/subscription.html'">
+                        Upgrade Now
+                    </button>
+                </div>
+                <div id="mock-tests-list" style="display: none;"></div>
+            </div>
+        </section>
+        <!-- Attempted Questions Section -->
+<section class="dashboard-section">
+    <div class="section-header">
+        <h2>📝 Attempted Questions</h2>
+        <p>Review all questions you've attempted with answers</p>
+    </div>
+
+    <div class="attempted-questions-card">
+        <div class="filters-row">
+            <select id="attempted-subject" onchange="filterAttemptedQuestions()">
+                <option value="">All Subjects</option>
+            </select>
+            <select id="attempted-filter">
+                <option value="all">All Questions</option>
+                <option value="correct">Correct Only</option>
+                <option value="wrong">Wrong Only</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadAttemptedQuestions()">
+                View Attempted Questions
+            </button>
+        </div>
+        <div id="attempted-stats" class="stats-row">
+            <div class="stat-card">
+                <h4 id="total-attempted">0</h4>
+                <p>Total Attempted</p>
+            </div>
+            <div class="stat-card">
+                <h4 id="total-correct">0</h4>
+                <p>Correct</p>
+            </div>
+            <div class="stat-card">
+                <h4 id="total-wrong">0</h4>
+                <p>Wrong</p>
+            </div>
+            <div class="stat-card">
+                <h4 id="accuracy-percent">0%</h4>
+                <p>Accuracy</p>
+            </div>
+        </div>
+    </div>
+</section>
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

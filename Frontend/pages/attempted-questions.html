@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attempted Questions - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="attempted-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="attempted-container">
+        <div class="attempted-header">
+            <button class="btn btn-outline" onclick="window.history.back()">
+                ← Back to Dashboard
+            </button>
+            <h2>Attempted Questions Review</h2>
+            <div class="filter-controls">
+                <select id="filter-type" onchange="applyFilters()">
+                    <option value="all">All Questions</option>
+                    <option value="correct">Correct Only</option>
+                    <option value="wrong">Wrong Only</option>
+                </select>
+                <select id="filter-subject" onchange="applyFilters()">
+                    <option value="all">All Subjects</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="questions-list" class="attempted-questions-list"></div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let allQuestions = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const data = sessionStorage.getItem('attemptedQuestions');
+            if (data) {
+                allQuestions = JSON.parse(data);
+                populateFilters();
+                displayQuestions(allQuestions);
+            } else {
+                showToast('No attempted questions found', 'info');
+                setTimeout(() => window.history.back(), 2000);
+            }
+        });
+
+        function populateFilters() {
+            const subjects = [...new Set(allQuestions.map(q => q.subject))];
+            const subjectSelect = document.getElementById('filter-subject');
+            
+            subjects.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const type = document.getElementById('filter-type').value;
+            const subject = document.getElementById('filter-subject').value;
+            
+            let filtered = allQuestions;
+            
+            if (type === 'correct') {
+                filtered = filtered.filter(q => q.isCorrect);
+            } else if (type === 'wrong') {
+                filtered = filtered.filter(q => !q.isCorrect);
+            }
+            
+            if (subject !== 'all') {
+                filtered = filtered.filter(q => q.subject === subject);
+            }
+            
+            displayQuestions(filtered);
+        }
+
+        function displayQuestions(questions) {
+            const listEl = document.getElementById('questions-list');
+            listEl.innerHTML = '';
+            
+            if (questions.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-muted">No questions found</p>';
+                return;
+            }
+            
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = `attempted-question-card ${q.isCorrect ? 'correct' : 'wrong'}`;
+                card.innerHTML = `
+                    <div class="question-info">
+                        <span class="badge">${q.subject}</span>
+                        <span class="badge">${q.chapter}</span>
+                        <span class="badge">${q.topic}</span>
+                        <span class="result-badge ${q.isCorrect ? 'correct' : 'wrong'}">
+                            ${q.isCorrect ? '✓ Correct' : '✗ Wrong'}
+                        </span>
+                    </div>
+                    <div class="question-meta">
+                        <span>Attempted: ${new Date(q.attemptedAt).toLocaleDateString()}</span>
+                        <span>Time: ${q.timeTaken}s</span>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+    </script>
+
+    <style>
+        .attempted-page {
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+        
+        .attempted-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+        
+        .attempted-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .filter-controls select {
+            padding: 10px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+        }
+        
+        .attempted-questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .attempted-question-card {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--border-color);
+        }
+        
+        .attempted-question-card.correct {
+            border-left-color: var(--success);
+        }
+        
+        .attempted-question-card.wrong {
+            border-left-color: var(--danger);
+        }
+        
+        .question-info {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .result-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .result-badge.correct {
+            background: var(--success);
+            color: white;
+        }
+        
+        .result-badge.wrong {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .question-meta {
+            display: flex;
+            gap: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="user-details-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="user-details-container">
+        <div class="user-details-card">
+            <div class="profile-header">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+                <h1>Complete Your Profile</h1>
+                <p>Help us personalize your learning experience</p>
+            </div>
+
+            <form id="user-details-form" class="details-form">
+                <!-- Step 1: Basic Info -->
+                <div class="form-step active" data-step="1">
+                    <h3>Basic Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email-display">Email Address</label>
+                        <input type="email" id="email-display" disabled>
+                        <small>This will be auto-filled from your account</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profession">I am a *</label>
+                        <select id="profession" name="profession" required>
+                            <option value="">Select profession</option>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="grade-group" style="display: none;">
+                        <label for="grade">Current Grade *</label>
+                        <select id="grade" name="grade">
+                            <option value="">Select grade</option>
+                            <option value="9th">9th Class</option>
+                            <option value="10th">10th Class</option>
+                            <option value="11th">11th Class</option>
+                            <option value="12th">12th Class</option>
+                            <option value="12th-passout">12th Pass Out</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">
+                        Continue
+                    </button>
+                </div>
+
+                <!-- Step 2: Educational Details -->
+                <div class="form-step" data-step="2">
+                    <h3>Educational Details</h3>
+
+                    <div class="form-group">
+                        <label for="preparingFor">Preparing For *</label>
+                        <input type="text" id="preparingFor" name="preparingFor" placeholder="e.g., JEE Mains, NEET" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="schoolName">School Name (Optional)</label>
+                        <input type="text" id="schoolName" name="schoolName" placeholder="Enter school name">
+                        <small>For future benefits (government school verification)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="collegeName">College Name (Optional)</label>
+                        <input type="text" id="collegeName" name="collegeName" placeholder="Enter college name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="state">State *</label>
+                        <select id="state" name="state" required>
+                            <option value="">Select state</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Outside India">Outside India</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-outline" onclick="prevStep()">
+                            Back
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="nextStep()">
+                            Continue
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Life Ambition -->
+                <div class="form-step" data-step="3">
+                    <h3>Your Dream</h3>
+                    <p class="text-muted">What motivates you to prepare for this exam?</p>
+
+                    <div class="form-group">
+                        <label for="lifeAmbition">Life Ambition (Max 50 characters)</label>
+                        <input type="text" id="lifeAmbition" name="lifeAmbition" maxlength="50" placeholder="e.g., Become a doctor and serve rural India">
+                        <small><span id="char-count">0</span>/50 characters</small>
+                    </div>
+
+                    <div class="motivation-card">
+                        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                            <circle cx="30" cy="30" r="28" stroke="#6366f1" stroke-width="2"/>
+                            <path d="M30 15L35 25L45 26.5L37.5 34L39 44L30 39L21 44L22.5 34L15 26.5L25 25L30 15Z" fill="#6366f1"/>
+                        </svg>
+                        <p>Your goal will remind you why you started this journey</p>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="button" class="btn btn-outline" onclick="prevStep()">
+                            Back
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Complete Profile
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        // Load user email
+        window.addEventListener('DOMContentLoaded', () => {
+            const user = getCurrentUser();
+            if (user && user.email) {
+                document.getElementById('email-display').value = user.email;
+            }
+        });
+
+        // Profession change handler
+        document.getElementById('profession').addEventListener('change', function() {
+            const gradeGroup = document.getElementById('grade-group');
+            const gradeSelect = document.getElementById('grade');
+            
+            if (this.value === 'student') {
+                gradeGroup.style.display = 'block';
+                gradeSelect.required = true;
+            } else {
+                gradeGroup.style.display = 'none';
+                gradeSelect.required = false;
+                gradeSelect.value = 'other';
+            }
+        });
+
+        // Character counter
+        document.getElementById('lifeAmbition').addEventListener('input', function() {
+            document.getElementById('char-count').textContent = this.value.length;
+        });
+
+        function nextStep() {
+            const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+            const inputs = currentStepEl.querySelectorAll('input[required], select[required]');
+            let valid = true;
+
+            inputs.forEach(input => {
+                if (!input.value) {
+                    valid = false;
+                    input.classList.add('error');
+                } else {
+                    input.classList.remove('error');
+                }
+            });
+
+            if (!valid) {
+                showToast('Please fill all required fields', 'error');
+                return;
+            }
+
+            if (currentStep < totalSteps) {
+                currentStepEl.classList.remove('active');
+                currentStep++;
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.remove('active');
+                currentStep--;
+                document.querySelector(`.form-step[data-step="${currentStep}"]`).classList.add('active');
+                updateProgress();
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.querySelector('.progress-fill').style.width = progress + '%';
+        }
+
+        // Form submission
+        document.getElementById('user-details-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            showLoading();
+
+            const formData = {
+                name: document.getElementById('name').value,
+                profession: document.getElementById('profession').value,
+                grade: document.getElementById('grade').value,
+                preparingFor: document.getElementById('preparingFor').value,
+                schoolName: document.getElementById('schoolName').value,
+                collegeName: document.getElementById('collegeName').value,
+                state: document.getElementById('state').value,
+                lifeAmbition: document.getElementById('lifeAmbition').value
+            };
+
+            try {
+                const response = await api.completeUserDetails(formData);
+                hideLoading();
+                
+                if (response.success) {
+                    showToast('Profile completed successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/pages/select-exam.html';
+                    }, 1500);
+                }
+            } catch (error) {
+                hideLoading();
+                showToast(error.message || 'Failed to save profile', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

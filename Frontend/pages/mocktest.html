@@ -1,0 +1,60 @@
+<!-- ========================================= -->
+<!-- pages/mock-test.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Test - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="mock-test-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Mock Test Interface -->
+    <div class="mock-test-container">
+        <!-- Header with Timer -->
+        <div class="mock-test-header">
+            <h3 id="test-name">Loading...</h3>
+            <div class="timer" id="timer">03:00:00</div>
+            <button class="btn btn-danger" onclick="submitMockTest()">Submit Test</button>
+        </div>
+
+        <!-- Question Grid (90 blocks for JEE, 180 for NEET) -->
+        <div class="question-grid" id="question-grid"></div>
+
+        <!-- Question Display -->
+        <div class="mock-question-card">
+            <div class="question-header">
+                <span class="subject-badge" id="subject-badge">Physics</span>
+                <span>Question <span id="question-num">1</span></span>
+            </div>
+
+            <div class="question-content">
+                <p id="mock-question-text">Loading question...</p>
+                <div id="mock-question-image"></div>
+            </div>
+
+            <!-- Options -->
+            <div id="mock-options" class="options-container"></div>
+
+            <!-- Numerical Input -->
+            <div id="mock-numerical" class="numerical-container" style="display: none;">
+                <input type="number" step="any" id="mock-numerical-answer">
+            </div>
+
+            <!-- Actions -->
+            <div class="mock-actions">
+                <button class="btn btn-outline" onclick="clearResponse()">Clear</button>
+                <button class="btn btn-outline" onclick="flagQuestion()">🚩 Flag</button>
+                <button class="btn btn-primary" onclick="saveAndNext()">Save & Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/mocktest.js"></script>
+</body>
+</html>

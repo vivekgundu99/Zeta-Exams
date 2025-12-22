@@ -1,0 +1,54 @@
+<!-- ========================================= -->
+<!-- pages/neet-dashboard.html -->
+<!-- (Same as JEE dashboard with NEET-specific subjects) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEET Dashboard - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="dashboard-page">
+    <!-- Same structure as jee-dashboard.html but with "NEET 2026" branding -->
+    <!-- Physics, Chemistry, Biology subjects -->
+    <!-- Mock test: 180 questions (90 Biology, 45 Physics, 45 Chemistry) -->
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="dashboard-header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40">
+                    <path d="M20 4L36 12V28L20 36L4 28V12L20 4Z" stroke="#10b981" stroke-width="2" fill="none"/>
+                    <text x="20" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#10b981">Z</text>
+                </svg>
+            </div>
+            <div class="header-title">
+                <h1>NEET 2026</h1>
+                <p id="user-greeting">Welcome back!</p>
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- Same header controls as JEE -->
+            <div class="quick-links">
+                <button class="icon-btn" onclick="toggleTheme()">🌙</button>
+                <div class="subscription-badge" id="subscription-badge">
+                    <span>⭐</span>
+                    <span id="subscription-type">Free</span>
+                </div>
+                <button class="icon-btn" onclick="openAccountMenu()">👤</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Rest same as JEE dashboard -->
+    <main class="dashboard-main">
+        <!-- Same sections with NEET branding -->
+    </main>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

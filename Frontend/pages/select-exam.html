@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Exam - Zeta Exams</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="select-exam-page">
+    <div id="loading-spinner" class="loading-spinner">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="select-exam-container">
+        <div class="exam-selection-card">
+            <div class="exam-header">
+                <h1>Choose Your Exam</h1>
+                <p>Select the exam you're preparing for</p>
+            </div>
+
+            <div class="exam-options">
+                <!-- JEE Option -->
+                <div class="exam-card" onclick="selectExam('JEE')">
+                    <div class="exam-icon jee-icon">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                            <circle cx="40" cy="40" r="35" stroke="#3b82f6" stroke-width="3"/>
+                            <text x="40" y="50" text-anchor="middle" font-size="24" font-weight="bold" fill="#3b82f6">JEE</text>
+                        </svg>
+                    </div>
+                    <div class="exam-info">
+                        <h3>JEE (Joint Entrance Examination)</h3>
+                        <p>Engineering entrance exam for IITs, NITs, and other top colleges</p>
+                        <div class="exam-subjects">
+                            <span class="subject-tag">Physics</span>
+                            <span class="subject-tag">Chemistry</span>
+                            <span class="subject-tag">Mathematics</span>
+                        </div>
+                    </div>
+                    <div class="select-arrow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- NEET Option -->
+                <div class="exam-card" onclick="selectExam('NEET')">
+                    <div class="exam-icon neet-icon">
+                        <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                            <circle cx="40" cy="40" r="35" stroke="#10b981" stroke-width="3"/>
+                            <text x="40" y="50" text-anchor="middle" font-size="22" font-weight="bold" fill="#10b981">NEET</text>
+                        </svg>
+                    </div>
+                    <div class="exam-info">
+                        <h3>NEET (National Eligibility cum Entrance Test)</h3>
+                        <p>Medical entrance exam for MBBS, BDS, and AYUSH courses</p>
+                        <div class="exam-subjects">
+                            <span class="subject-tag">Physics</span>
+                            <span class="subject-tag">Chemistry</span>
+                            <span class="subject-tag">Biology</span>
+                        </div>
+                    </div>
+                    <div class="select-arrow">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8.59 16.59L13.17 12L8.59 7.41L10 6L16 12L10 18L8.59 16.59Z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="exam-footer">
+                <p class="text-muted">You can change this later from your profile settings</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        async function selectExam(exam) {
+            showLoading();
+            
+            try {
+                const response = await api.selectExam(exam);
+                
+                if (response.success) {
+                    // Update user in localStorage
+                    const user = getCurrentUser();
+                    user.selectedExam = exam;
+                    saveCurrentUser(user);
+                    
+                    hideLoading();
+                    showToast(`${exam} exam selected successfully!`, 'success');
+                    
+                    // Redirect to subscription page
+                    setTimeout(() => {
+                        window.location.href = '/pages/subscription.html';
+                    }, 1000);
+                }
+            } catch (error) {
+                hideLoading();
+                showToast(error.message || 'Failed to select exam', 'error');
+            }
+        }
+
+        // Check if user is logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!isLoggedIn()) {
+                window.location.href = '/pages/login.html';
+            }
+        });
+    </script>
+</body>
+</html>
