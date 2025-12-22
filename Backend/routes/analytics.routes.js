@@ -1,5 +1,11 @@
 // routes/analytics.routes.js - Analytics Routes
+// routes/analytics.routes.js - Analytics Routes
+import express from 'express';
+import User from '../models/User.model.js';
+import { authMiddleware } from '../middleware/auth.middleware.js';
+
 const analyticsRouter = express.Router();
+analyticsRouter.use(authMiddleware);
 analyticsRouter.use(authMiddleware);
 
 // GET /api/analytics/overview
@@ -52,4 +58,4 @@ analyticsRouter.get('/overview', async (req, res) => {
   }
 });
 
-export const analyticsRoutes = analyticsRouter;
+export default analyticsRouter;  // Changed from: export { analyticsRoutes };

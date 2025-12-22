@@ -188,6 +188,7 @@ router.get('/:id/image', async (req, res) => {
 
 // POST /api/questions/verify-answer - Verify answer and track
 // POST /api/questions/verify-answer - Verify answer and track (NO LIMIT CHECK)
+// POST /api/questions/verify-answer - Verify answer and track
 router.post('/verify-answer', async (req, res) => {
   try {
     const { questionId, userAnswer, timeTaken } = req.body;
@@ -201,6 +202,47 @@ router.post('/verify-answer', async (req, res) => {
         message: 'Question or user not found'
       });
     }
+
+    // Verify answer
+    let isCorrect = false;
+    if (question.questionType === 'MCQ') {
+      isCorrect = userAnswer.toUpperCase() === question.correctAnswer.toUpperCase();
+    } else {
+      // Numerical - normalize and compare
+      const normalizedUser = parseFloat(userAnswer).toString();
+      const normalizedCorrect = parseFloat(question.correctAnswer).toString();
+      isCorrect = normalizedUser === normalizedCorrect;
+    }
+
+    // Track attempt - NO daily count increment (as per your design)
+    user.attemptedQuestions.push({
+      questionId: question._id,
+      subject: question.subject,
+      chapter: question.chapter,
+      topic: question.topic,
+      isCorrect,
+      attemptedAt: new Date(),
+      timeTaken: timeTaken || 0
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      isCorrect,
+      correctAnswer: question.correctAnswer,
+      questionText: question.questionText,
+      options: question.options
+    });
+
+  } catch (error) {
+    console.error('Verify Answer Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify answer'
+    });
+  }
+});
 
     // NO LIMIT CHECK - Only attempted questions count is stored
 

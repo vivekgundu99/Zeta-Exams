@@ -71,15 +71,19 @@ const userSchema = new mongoose.Schema({
     enum: ['JEE', 'NEET']
   },
   // Daily Usage Tracking
+  // Daily Usage Tracking
   dailyUsage: {
-  date: {
-    type: Date,
-    default: () => new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
-  },
-  questionsAttempted: {
-    type: Number,
-    default: 0
-  },
+    date: {
+      type: Date,
+      default: () => {
+        const now = new Date();
+        return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      }
+    },
+    questionsAttempted: {
+      type: Number,
+      default: 0
+    },
   chapterTestsGenerated: {
     type: Number,
     default: 0

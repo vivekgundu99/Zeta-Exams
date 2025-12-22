@@ -314,4 +314,4 @@ router.get('/:id/review', async (req, res) => {
   }
 });
 
-export const mocktestRoutes = router;
+export default router;

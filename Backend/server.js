@@ -1,18 +1,26 @@
 // server.js - Main Backend Entry Point
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import questionRoutes from './routes/question.routes.js';
 import subscriptionRoutes from './routes/subscription.routes.js';
 import adminRoutes from './routes/admin.routes.js';
-import mockTestRoutes from './routes/mocktest.routes.js';
-import analyticsRoutes from './routes/analytics.routes.js';
-import feedbackRoutes from './routes/feedback.routes.js';
+import mockTestRoutes from './routes/mocktest.routes.js';  // No curly braces
+import analyticsRoutes from './routes/analytics.routes.js';  // No curly braces
+import feedbackRoutes from './routes/feedback.routes.js';  // No curly braces
 import giftCodeRoutes from './routes/giftcode.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/mocktest', mockTestRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/giftcode', giftCodeRoutes);
+app.use('/api/payment', paymentRoutes);
 
 dotenv.config();
 
@@ -38,18 +46,6 @@ app.get('/api/health', (req, res) => {
     timezone: 'Asia/Kolkata'
   });
 });
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/questions', questionRoutes);
-app.use('/api/subscription', subscriptionRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/mocktest', mockTestRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/giftcode', giftCodeRoutes);
-app.use('/api/payment', paymentRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
