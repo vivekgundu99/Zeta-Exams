@@ -1120,3 +1120,83 @@ select[multiple] {
     text-align: center;
   }
 }
+/* Mock Test Styles */
+.mock-test-page {
+  min-height: 100vh;
+  background: var(--bg-secondary);
+}
+
+.mock-test-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.mock-test-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-primary);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+
+.timer {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 8px;
+  background: var(--bg-primary);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+}
+
+.question-block {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.question-block.unanswered {
+  background: var(--gray-200);
+  color: var(--text-primary);
+}
+
+.question-block.answered {
+  background: var(--success);
+  color: white;
+}
+
+.question-block.flagged {
+  background: var(--warning);
+  color: white;
+}
+
+.question-block.active {
+  border: 3px solid var(--primary);
+}
+
+.mock-question-card {
+  background: var(--bg-primary);
+  padding: 32px;
+  border-radius: var(--border-radius-lg);
+}
+
+.mock-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}

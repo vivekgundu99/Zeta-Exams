@@ -18,7 +18,6 @@ import paymentRoutes from './routes/payment.routes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // CORS Configuration
 const allowedOrigins = [
@@ -30,13 +29,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all for now to debug
+      callback(null, true); // Allow all for now
     }
   },
   credentials: true,
@@ -44,15 +41,34 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB (only once, not on every request)
+let isConnected = false;
+
+const connectToDatabase = async () => {
+  if (isConnected) {
+    console.log('Using existing database connection');
+    return;
+  }
+  
+  try {
+    await connectDB();
+    isConnected = true;
+  } catch (error) {
+    console.error('Database connection error:', error);
+  }
+};
+
+// Middleware to ensure DB connection
+app.use(async (req, res, next) => {
+  await connectToDatabase();
+  next();
+});
 
 // Health Check
 app.get('/', (req, res) => {
@@ -100,6 +116,14 @@ app.use((req, res) => {
     message: 'Route not found'
   });
 });
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 // Export for Vercel
 export default app;

@@ -169,5 +169,102 @@ async function submitMockTest() {
         }
     }
 }
+// Show MCQ Options
+function showMCQOptions(options, currentAnswer) {
+    const container = document.getElementById('mock-options');
+    container.innerHTML = '';
+    container.style.display = 'block';
+    
+    options.forEach(option => {
+        const optionEl = document.createElement('div');
+        optionEl.className = 'option';
+        if (currentAnswer === option.label) {
+            optionEl.classList.add('selected');
+        }
+        optionEl.innerHTML = `
+            <span class="option-label">${option.label}</span>
+            <span class="option-text">${option.text}</span>
+        `;
+        optionEl.onclick = () => selectAnswer(option.label);
+        container.appendChild(optionEl);
+    });
+}
 
-// Additional functions: showMCQOptions, showNumericalInput, saveAndNext, etc.
+// Show Numerical Input
+function showNumericalInput(currentAnswer) {
+    const container = document.getElementById('mock-numerical');
+    container.style.display = 'block';
+    document.getElementById('mock-numerical-answer').value = currentAnswer || '';
+    document.getElementById('mock-options').style.display = 'none';
+}
+
+// Select Answer
+function selectAnswer(answer) {
+    answers[currentQuestionIndex] = answer;
+    
+    // Update question block status
+    const block = document.querySelectorAll('.question-block')[currentQuestionIndex];
+    block.classList.remove('unanswered');
+    block.classList.add('answered');
+    
+    // Update UI
+    document.querySelectorAll('.option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    event.target.closest('.option').classList.add('selected');
+    
+    saveProgress();
+}
+
+// Save and Next
+function saveAndNext() {
+    // Save numerical answer if applicable
+    const numericalInput = document.getElementById('mock-numerical-answer');
+    if (numericalInput.style.display !== 'none' && numericalInput.value) {
+        answers[currentQuestionIndex] = numericalInput.value;
+    }
+    
+    // Move to next question
+    if (currentQuestionIndex < mockTestData.totalQuestions - 1) {
+        loadQuestion(currentQuestionIndex + 1);
+    }
+}
+
+// Clear Response
+function clearResponse() {
+    answers[currentQuestionIndex] = null;
+    const block = document.querySelectorAll('.question-block')[currentQuestionIndex];
+    block.classList.add('unanswered');
+    block.classList.remove('answered', 'flagged');
+    
+    // Clear UI
+    document.querySelectorAll('.option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    document.getElementById('mock-numerical-answer').value = '';
+}
+
+// Flag Question
+function flagQuestion() {
+    const block = document.querySelectorAll('.question-block')[currentQuestionIndex];
+    block.classList.toggle('flagged');
+    
+    if (block.classList.contains('flagged')) {
+        flaggedQuestions.add(currentQuestionIndex);
+    } else {
+        flaggedQuestions.delete(currentQuestionIndex);
+    }
+    
+    saveProgress();
+}
+
+// Save Progress
+function saveProgress() {
+    localStorage.setItem('currentMockTest', JSON.stringify({
+        data: mockTestData,
+        answers,
+        flagged: Array.from(flaggedQuestions),
+        currentIndex: currentQuestionIndex,
+        remainingTime
+    }));
+}
