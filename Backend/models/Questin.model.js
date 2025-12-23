@@ -102,4 +102,6 @@ questionSchema.statics.getRandomQuestions = async function(filters, count, exclu
   return questions;
 };
 
-export default mongoose.model('Question', questionSchema);
+const Question = mongoose.model('Question', questionSchema);
+
+export default Question;
