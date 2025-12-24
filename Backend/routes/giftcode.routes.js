@@ -1,6 +1,6 @@
 // routes/giftcode.routes.js - Gift Code Management (Admin Only)
 import express from 'express';
-import { GiftCode } from '../models/Others.js';
+import { GiftCode } from '../models/others.js';
 import { adminAuthMiddleware } from '../middleware/auth.middleware.js';
 
 const router = express.Router();

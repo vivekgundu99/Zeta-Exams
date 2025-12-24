@@ -2,7 +2,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Admin, GiftCode, FormulaSheet } from '../models/Others.js';
+import { Admin, GiftCode, FormulaSheet } from '../models/others.js';
 import Question from '../models/Question.model.js';
 import { adminAuthMiddleware } from '../middleware/auth.middleware.js';
 import Papa from 'papaparse';

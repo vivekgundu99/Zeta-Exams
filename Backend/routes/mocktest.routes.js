@@ -1,6 +1,6 @@
 // routes/mocktest.routes.js - Mock Test Routes
 import express from 'express';
-import { MockTest } from '../models/Others.js';
+import { MockTest } from '../models/others.js';
 import User from '../models/User.model.js';
 import Question from '../models/Question.model.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';

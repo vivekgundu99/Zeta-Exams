@@ -2,7 +2,7 @@
 import express from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { Payment } from '../models/Others.js';
+import { Payment } from '../models/others.js';
 import User from '../models/User.model.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 

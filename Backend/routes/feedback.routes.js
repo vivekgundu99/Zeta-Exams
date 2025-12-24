@@ -1,7 +1,7 @@
 // routes/feedback.routes.js - Feedback Routes
 // routes/feedback.routes.js - Feedback Routes
 import express from 'express';
-import { Feedback } from '../models/Others.js';
+import { Feedback } from '../models/others.js';
 import User from '../models/User.model.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 

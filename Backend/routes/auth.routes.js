@@ -2,7 +2,7 @@
 import express from 'express';
 import { Resend } from 'resend';
 import User from '../models/User.model.js';
-import { OTP } from '../models/Others.js';
+import { OTP } from '../models/others.js';
 import { encryptPhone } from '../config/database.js';
 import jwt from 'jsonwebtoken';
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import User from '../models/User.model.js';
-import { GiftCode } from '../models/Others.js';
+import { GiftCode } from '../models/others.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
