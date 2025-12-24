@@ -1,169 +1,220 @@
-// server.js - Routes Load with Promise
+// server.js - Fixed Routes Loading
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
+import { connectDB } from './config/database.js';
 
 dotenv.config();
 
 const app = express();
 
 // ===== MIDDLEWARE =====
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+}));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`);
   next();
 });
 
-// ===== DATABASE =====
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) return;
-  
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 30000
-    });
-    isConnected = true;
-    console.log('✅ MongoDB connected');
-  } catch (error) {
-    console.error('❌ MongoDB error:', error.message);
-  }
-};
-
 // ===== BASIC ROUTES =====
 app.get('/', (req, res) => {
-  res.json({ status: 'OK', message: 'Zeta Exams API', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    message: 'Zeta Exams API', 
+    timestamp: new Date().toISOString() 
+  });
 });
 
 app.get('/api', (req, res) => {
   res.json({ status: 'OK', message: 'API Ready' });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    status: 'healthy', 
-    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    routesLoaded 
+// ===== DATABASE CONNECTION =====
+let dbConnected = false;
+
+const initDB = async () => {
+  if (!dbConnected) {
+    try {
+      await connectDB();
+      dbConnected = true;
+      console.log('✅ Database initialized');
+    } catch (error) {
+      console.error('❌ Database initialization failed:', error.message);
+    }
+  }
+};
+
+// ===== DYNAMIC ROUTE LOADING =====
+let routesLoaded = false;
+let routeHandlers = {};
+
+const loadRoutes = async () => {
+  if (routesLoaded) return routeHandlers;
+  
+  try {
+    console.log('📦 Loading routes...');
+    
+    const [
+      authModule,
+      userModule,
+      questionModule,
+      subscriptionModule,
+      adminModule,
+      mocktestModule,
+      analyticsModule,
+      feedbackModule,
+      giftcodeModule,
+      paymentModule
+    ] = await Promise.all([
+      import('./routes/auth.routes.js'),
+      import('./routes/user.routes.js'),
+      import('./routes/question.routes.js'),
+      import('./routes/subscription.routes.js'),
+      import('./routes/admin.routes.js'),
+      import('./routes/mocktest.routes.js'),
+      import('./routes/analytics.routes.js'),
+      import('./routes/feedback.routes.js'),
+      import('./routes/giftcode.routes.js'),
+      import('./routes/payment.routes.js')
+    ]);
+
+    routeHandlers = {
+      auth: authModule.default,
+      user: userModule.default,
+      question: questionModule.default,
+      subscription: subscriptionModule.default,
+      admin: adminModule.default,
+      mocktest: mocktestModule.default,
+      analytics: analyticsModule.default,
+      feedback: feedbackModule.default,
+      giftcode: giftcodeModule.default,
+      payment: paymentModule.default
+    };
+
+    routesLoaded = true;
+    console.log('✅ All routes loaded successfully');
+    return routeHandlers;
+  } catch (error) {
+    console.error('❌ Route loading failed:', error);
+    throw error;
+  }
+};
+
+// ===== HEALTH CHECK =====
+app.get('/api/health', async (req, res) => {
+  await initDB();
+  
+  res.json({
+    success: true,
+    status: 'healthy',
+    db: dbConnected ? 'connected' : 'disconnected',
+    routesLoaded,
+    timestamp: new Date().toISOString()
   });
 });
 
-// ===== LOAD ROUTES =====
-const routes = {};
-let routesLoaded = false;
-
-const loadRoutesPromise = Promise.all([
-  import('./routes/auth.routes.js'),
-  import('./routes/user.routes.js'),
-  import('./routes/question.routes.js'),
-  import('./routes/subscription.routes.js'),
-  import('./routes/admin.routes.js'),
-  import('./routes/mocktest.routes.js'),
-  import('./routes/analytics.routes.js'),
-  import('./routes/feedback.routes.js'),
-  import('./routes/giftcode.routes.js'),
-  import('./routes/payment.routes.js')
-]).then(([auth, user, question, subscription, admin, mocktest, analytics, feedback, giftcode, payment]) => {
-  routes.auth = auth.default;
-  routes.user = user.default;
-  routes.question = question.default;
-  routes.subscription = subscription.default;
-  routes.admin = admin.default;
-  routes.mocktest = mocktest.default;
-  routes.analytics = analytics.default;
-  routes.feedback = feedback.default;
-  routes.giftcode = giftcode.default;
-  routes.payment = payment.default;
-  routesLoaded = true;
-  console.log('✅ All routes loaded');
-}).catch(error => {
-  console.error('❌ Routes loading failed:', error);
-});
-
-// ===== ROUTE MIDDLEWARE =====
-const waitForRoutes = async (req, res, next) => {
-  if (routesLoaded) {
-    return next();
-  }
+// ===== MIDDLEWARE TO ENSURE ROUTES ARE LOADED =====
+const ensureRoutesLoaded = async (req, res, next) => {
+  await initDB();
   
-  try {
-    await Promise.race([
-      loadRoutesPromise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000))
-    ]);
-    next();
-  } catch (error) {
-    res.status(503).json({ success: false, message: 'Service initializing, please retry in 5 seconds' });
+  if (!routesLoaded) {
+    try {
+      await loadRoutes();
+    } catch (error) {
+      return res.status(503).json({
+        success: false,
+        message: 'Service initializing. Please try again in a moment.'
+      });
+    }
   }
-};
-
-const dbAndRoutesMiddleware = async (req, res, next) => {
-  await connectDB();
-  await waitForRoutes(req, res, next);
+  next();
 };
 
 // ===== MOUNT ROUTES =====
-app.use('/api/auth', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.auth(req, res, next);
+app.use('/api/auth', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.auth(req, res, next);
 });
 
-app.use('/api/user', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.user(req, res, next);
+app.use('/api/user', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.user(req, res, next);
 });
 
-app.use('/api/questions', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.question(req, res, next);
+app.use('/api/questions', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.question(req, res, next);
 });
 
-app.use('/api/subscription', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.subscription(req, res, next);
+app.use('/api/subscription', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.subscription(req, res, next);
 });
 
-app.use('/api/admin', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.admin(req, res, next);
+app.use('/api/admin', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.admin(req, res, next);
 });
 
-app.use('/api/mocktest', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.mocktest(req, res, next);
+app.use('/api/mocktest', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.mocktest(req, res, next);
 });
 
-app.use('/api/analytics', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.analytics(req, res, next);
+app.use('/api/analytics', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.analytics(req, res, next);
 });
 
-app.use('/api/feedback', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.feedback(req, res, next);
+app.use('/api/feedback', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.feedback(req, res, next);
 });
 
-app.use('/api/giftcode', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.giftcode(req, res, next);
+app.use('/api/giftcode', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.giftcode(req, res, next);
 });
 
-app.use('/api/payment', dbAndRoutesMiddleware, (req, res, next) => {
-  routes.payment(req, res, next);
+app.use('/api/payment', ensureRoutesLoaded, (req, res, next) => {
+  routeHandlers.payment(req, res, next);
 });
 
 // ===== ERROR HANDLERS =====
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Not found' });
+  res.status(404).json({ 
+    success: false, 
+    message: 'Route not found',
+    path: req.path
+  });
 });
 
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(500).json({ success: false, message: err.message || 'Server error' });
+  res.status(500).json({ 
+    success: false, 
+    message: err.message || 'Internal server error' 
+  });
 });
 
-// ===== LOCAL DEV =====
+// ===== SERVER STARTUP =====
+const PORT = process.env.PORT || 5000;
+
 if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  loadRoutesPromise.then(() => connectDB()).then(() => {
-    app.listen(PORT, () => console.log(`🚀 Server: http://localhost:${PORT}`));
-  });
+  // Local development
+  (async () => {
+    try {
+      await initDB();
+      await loadRoutes();
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    } catch (error) {
+      console.error('❌ Server startup failed:', error);
+      process.exit(1);
+    }
+  })();
 }
 
+// ===== VERCEL EXPORT =====
 export default app;
