@@ -1,5 +1,5 @@
-// js/api.js - API Communication Layer
-const API_URL = 'https://zeta-exams-backend.vercel.app/api'; // Update with your Vercel backend URL
+// js/api.js - API Communication Layer with Fixed CORS Handling
+const API_URL = 'https://zeta-exams-backend.vercel.app/api';
 
 class API {
   constructor() {
@@ -20,31 +20,82 @@ class API {
     localStorage.removeItem('user');
   }
 
-  // Get headers
+  // Get headers with proper CORS configuration
   getHeaders(isJson = true) {
-    const headers = {};
-    if (isJson) headers['Content-Type'] = 'application/json';
-    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const headers = {
+      'Accept': 'application/json',
+    };
+    
+    if (isJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    
     return headers;
   }
 
-  // Generic request handler
+  // Generic request handler with better error handling
   async request(endpoint, options = {}) {
     try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
+      const url = `${this.baseURL}${endpoint}`;
+      
+      const config = {
         ...options,
-        headers: this.getHeaders(options.body !== undefined)
-      });
+        headers: this.getHeaders(options.body !== undefined),
+        credentials: 'include', // Important for CORS
+        mode: 'cors', // Explicitly set CORS mode
+      };
 
-      const data = await response.json();
+      console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
+      
+      const response = await fetch(url, config);
+
+      // Handle different response types
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        // Try to parse as JSON anyway
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: text || 'No response data' };
+        }
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
+        // Handle specific HTTP errors
+        if (response.status === 401) {
+          // Unauthorized - clear token and redirect to login
+          this.clearToken();
+          if (window.location.pathname !== '/pages/login.html' && 
+              window.location.pathname !== '/pages/index.html') {
+            window.location.href = '/pages/login.html';
+          }
+        }
+        
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to server. Please check your internet connection.');
+      }
+      
+      if (error.name === 'TypeError' && error.message.includes('CORS')) {
+        throw new Error('Connection blocked. Please try again or contact support.');
+      }
+      
       throw error;
     }
   }
@@ -107,11 +158,11 @@ class API {
   }
 
   async getChapters(exam, subject) {
-    return this.request(`/questions/chapters?exam=${exam}&subject=${subject}`);
+    return this.request(`/questions/chapters?exam=${exam}&subject=${encodeURIComponent(subject)}`);
   }
 
   async getTopics(exam, subject, chapter) {
-    return this.request(`/questions/topics?exam=${exam}&subject=${subject}&chapter=${chapter}`);
+    return this.request(`/questions/topics?exam=${exam}&subject=${encodeURIComponent(subject)}&chapter=${encodeURIComponent(chapter)}`);
   }
 
   async getPracticeQuestions(filters) {

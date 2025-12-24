@@ -1,4 +1,4 @@
-// models/User.model.js - User Schema
+// models/User.model.js - User Schema (Fixed duplicate index warning)
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     trim: true,
-    index: true
+    // Removed duplicate index - will be created via schema.index() below
   },
   subscriptionType: {
     type: String,
@@ -71,7 +71,6 @@ const userSchema = new mongoose.Schema({
     enum: ['JEE', 'NEET']
   },
   // Daily Usage Tracking
-  // Daily Usage Tracking
   dailyUsage: {
     date: {
       type: Date,
@@ -84,21 +83,21 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0
     },
-  chapterTestsGenerated: {
-    type: Number,
-    default: 0
+    chapterTestsGenerated: {
+      type: Number,
+      default: 0
+    },
+    mockTestsAttempted: {
+      type: Number,
+      default: 0
+    }
   },
-  mockTestsAttempted: {
-    type: Number,
-    default: 0
-  }
-},
-// Add ongoing mock test tracking
-ongoingMockTest: {
-  mockTestId: mongoose.Schema.Types.ObjectId,
-  startedAt: Date,
-  expiresAt: Date
-},
+  // Add ongoing mock test tracking
+  ongoingMockTest: {
+    mockTestId: mongoose.Schema.Types.ObjectId,
+    startedAt: Date,
+    expiresAt: Date
+  },
   // Attempted Questions (永久記録)
   attemptedQuestions: [{
     questionId: mongoose.Schema.Types.ObjectId,
@@ -144,7 +143,7 @@ ongoingMockTest: {
   timestamps: true
 });
 
-// Index for email account limit check
+// Create index for email account limit check (single definition)
 userSchema.index({ email: 1 });
 
 // Check if email has reached account limit (max 3)

@@ -1,4 +1,4 @@
-// routes/payment.routes.js - Razorpay Payment Routes
+// routes/payment.routes.js - Razorpay Payment Routes with conditional initialization
 import express from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -9,10 +9,19 @@ import { authMiddleware } from '../middleware/auth.middleware.js';
 const router = express.Router();
 router.use(authMiddleware);
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
+// Initialize Razorpay only if credentials are available
+let razorpay = null;
+const RAZORPAY_ENABLED = !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+
+if (RAZORPAY_ENABLED) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+  });
+  console.log('✅ Razorpay initialized successfully');
+} else {
+  console.warn('⚠️  Razorpay not configured - Payment routes will return errors');
+}
 
 const DURATION_MAP = {
   '1M': 30,
@@ -20,8 +29,19 @@ const DURATION_MAP = {
   '1Y': 365
 };
 
+// Middleware to check if Razorpay is enabled
+const checkRazorpayEnabled = (req, res, next) => {
+  if (!RAZORPAY_ENABLED) {
+    return res.status(503).json({
+      success: false,
+      message: 'Payment service not configured. Please contact administrator.'
+    });
+  }
+  next();
+};
+
 // POST /api/payment/create-order
-router.post('/create-order', async (req, res) => {
+router.post('/create-order', checkRazorpayEnabled, async (req, res) => {
   try {
     const { planType, duration, amount } = req.body;
 
@@ -62,7 +82,7 @@ router.post('/create-order', async (req, res) => {
 });
 
 // POST /api/payment/verify
-router.post('/verify', async (req, res) => {
+router.post('/verify', checkRazorpayEnabled, async (req, res) => {
   try {
     const {
       razorpay_payment_id,
@@ -141,6 +161,13 @@ router.post('/verify', async (req, res) => {
 router.post('/webhook', async (req, res) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    
+    if (!secret) {
+      return res.status(503).json({
+        success: false,
+        message: 'Webhook not configured'
+      });
+    }
     
     // Verify webhook signature
     const shasum = crypto.createHmac('sha256', secret);
