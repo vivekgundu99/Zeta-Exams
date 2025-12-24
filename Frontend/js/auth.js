@@ -1,17 +1,18 @@
-// js/auth.js - Authentication Flow Logic
+// js/auth.js - Updated Authentication with Password Login
 
 let otpTimer;
 let currentEmail = '';
 let currentPhone = '';
+let isNewUser = false;
 
-// Phone & Email Form Submission
+// Phone & Email Form Submission - Check if user exists
 document.getElementById('phone-email-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
   const email = document.getElementById('email').value.trim();
   const phone = document.getElementById('phone').value.trim();
   
-  // Validate phone (10 digits)
+  // Validate phone
   if (!/^\d{10}$/.test(phone)) {
     showToast('Please enter a valid 10-digit phone number', 'error');
     return;
@@ -20,7 +21,7 @@ document.getElementById('phone-email-form')?.addEventListener('submit', async (e
   showLoading();
   
   try {
-    const response = await api.sendOTP(email, phone);
+    const response = await api.checkUser(email, phone);
     
     hideLoading();
     
@@ -28,22 +29,95 @@ document.getElementById('phone-email-form')?.addEventListener('submit', async (e
       currentEmail = email;
       currentPhone = phone;
       
-      // Show OTP step
+      if (response.userExists) {
+        // Existing user - show password login
+        isNewUser = false;
+        showPasswordLogin();
+      } else {
+        // New user - send OTP for registration
+        isNewUser = true;
+        await sendOTPForRegistration();
+      }
+    }
+  } catch (error) {
+    hideLoading();
+    showToast(error.message || 'Failed to check user', 'error');
+  }
+});
+
+// Show Password Login Screen
+function showPasswordLogin() {
+  document.getElementById('step-phone-email').classList.remove('active');
+  document.getElementById('step-password').classList.add('active');
+  document.getElementById('password-email').textContent = currentEmail;
+  document.getElementById('login-password').focus();
+}
+
+// Send OTP for Registration
+async function sendOTPForRegistration() {
+  showLoading();
+  
+  try {
+    const response = await api.sendOTP(currentEmail, currentPhone);
+    
+    hideLoading();
+    
+    if (response.success) {
+      // Show OTP step for registration
       document.getElementById('step-phone-email').classList.remove('active');
       document.getElementById('step-otp').classList.add('active');
-      document.getElementById('otp-email').textContent = email;
+      document.getElementById('otp-email').textContent = currentEmail;
+      document.getElementById('otp-instruction').textContent = 'Enter OTP to complete registration';
       
-      // Start OTP timer
-      startOTPTimer(600); // 10 minutes
+      // Show password field in OTP step
+      document.getElementById('otp-password-group').style.display = 'block';
+      
+      // Start timer
+      startOTPTimer(600);
       
       // Focus first OTP digit
       document.querySelector('.otp-digit').focus();
       
-      showToast('OTP sent successfully!', 'success');
+      showToast('OTP sent to your email!', 'success');
     }
   } catch (error) {
     hideLoading();
     showToast(error.message || 'Failed to send OTP', 'error');
+  }
+}
+
+// Password Login Form
+document.getElementById('password-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const password = document.getElementById('login-password').value;
+  
+  if (!password) {
+    showToast('Please enter your password', 'error');
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    const response = await api.loginWithPassword(currentEmail, currentPhone, password);
+    
+    hideLoading();
+    
+    if (response.success) {
+      api.setToken(response.token);
+      saveCurrentUser(response.user);
+      
+      // Check if multiple accounts
+      if (response.allAccounts && response.allAccounts.length > 1) {
+        showAccountSelection(response.allAccounts);
+      } else {
+        handleSuccessfulLogin(response.user);
+      }
+    }
+  } catch (error) {
+    hideLoading();
+    showToast(error.message || 'Invalid password', 'error');
   }
 });
 
@@ -54,26 +128,22 @@ otpDigits.forEach((digit, index) => {
   digit.addEventListener('input', (e) => {
     const value = e.target.value;
     
-    // Only allow numbers
     if (!/^\d$/.test(value)) {
       e.target.value = '';
       return;
     }
     
-    // Move to next input
     if (value && index < otpDigits.length - 1) {
       otpDigits[index + 1].focus();
     }
   });
   
   digit.addEventListener('keydown', (e) => {
-    // Move to previous input on backspace
     if (e.key === 'Backspace' && !e.target.value && index > 0) {
       otpDigits[index - 1].focus();
     }
   });
   
-  // Paste handling
   digit.addEventListener('paste', (e) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').trim();
@@ -89,50 +159,53 @@ otpDigits.forEach((digit, index) => {
   });
 });
 
-// OTP Form Submission
+// OTP Form Submission (for registration)
 document.getElementById('otp-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
   const otp = Array.from(otpDigits).map(d => d.value).join('');
+  const password = document.getElementById('otp-password').value;
   
   if (otp.length !== 6) {
     showToast('Please enter complete OTP', 'error');
     return;
   }
   
+  if (!password || password.length < 6) {
+    showToast('Password must be at least 6 characters', 'error');
+    return;
+  }
+  
   showLoading();
   
   try {
-    const response = await api.verifyOTP(currentEmail, currentPhone, otp);
+    const response = await api.verifyOTP(currentEmail, currentPhone, otp, password);
     
     hideLoading();
     
     if (response.success) {
-      // Save token
       api.setToken(response.token);
       saveCurrentUser(response.user);
       
-      // Stop timer
       if (otpTimer) clearInterval(otpTimer);
       
-      // Check if multiple accounts exist
       if (response.allAccounts && response.allAccounts.length > 1) {
-        // Show account selection
         showAccountSelection(response.allAccounts);
       } else {
-        // Single account - proceed
+        showToast('Registration successful!', 'success');
         handleSuccessfulLogin(response.user);
       }
     }
   } catch (error) {
     hideLoading();
-    showToast(error.message || 'Invalid OTP', 'error');
+    showToast(error.message || 'Registration failed', 'error');
   }
 });
 
 // Show Account Selection
 function showAccountSelection(accounts) {
   document.getElementById('step-otp').classList.remove('active');
+  document.getElementById('step-password').classList.remove('active');
   document.getElementById('step-select-account').classList.add('active');
   
   const accountsList = document.getElementById('accounts-list');
@@ -172,24 +245,13 @@ async function selectAccount(userId) {
   }
 }
 
-// Create New Account
-function createNewAccount() {
-  // Just proceed with the existing OTP verification
-  // The backend will create a new account
-  const user = getCurrentUser();
-  handleSuccessfulLogin(user);
-}
-
 // Handle Successful Login
 function handleSuccessfulLogin(user) {
   if (!user.userDetailsCompleted) {
-    // Redirect to user details page
     window.location.href = '/pages/user-details.html';
   } else if (!user.selectedExam) {
-    // Redirect to exam selection
     window.location.href = '/pages/select-exam.html';
   } else {
-    // Redirect to dashboard
     const dashboardUrl = user.selectedExam === 'JEE' 
       ? '/pages/jee-dashboard.html' 
       : '/pages/neet-dashboard.html';
@@ -221,36 +283,34 @@ function startOTPTimer(seconds) {
 async function resendOTP() {
   if (otpTimer) clearInterval(otpTimer);
   
-  // Clear OTP inputs
   otpDigits.forEach(d => d.value = '');
   otpDigits[0].focus();
   
-  showLoading();
-  
-  try {
-    const response = await api.sendOTP(currentEmail, currentPhone);
-    
-    hideLoading();
-    
-    if (response.success) {
-      startOTPTimer(600);
-      showToast('New OTP sent successfully!', 'success');
-    }
-  } catch (error) {
-    hideLoading();
-    showToast(error.message || 'Failed to resend OTP', 'error');
-  }
+  await sendOTPForRegistration();
 }
 
-// Back to Phone/Email
+// Back Navigation
 function backToPhoneEmail() {
   if (otpTimer) clearInterval(otpTimer);
   
   document.getElementById('step-otp').classList.remove('active');
+  document.getElementById('step-password').classList.remove('active');
   document.getElementById('step-phone-email').classList.add('active');
   
-  // Clear OTP inputs
   otpDigits.forEach(d => d.value = '');
+  document.getElementById('login-password').value = '';
+  document.getElementById('otp-password').value = '';
+}
+
+function backFromPassword() {
+  document.getElementById('step-password').classList.remove('active');
+  document.getElementById('step-phone-email').classList.add('active');
+  document.getElementById('login-password').value = '';
+}
+
+// Forgot Password (redirect to support/reset)
+function forgotPassword() {
+  showToast('Please contact support at zetafeedback@gmail.com for password reset', 'info');
 }
 
 // Theme Toggle
@@ -262,7 +322,7 @@ function toggleTheme() {
   localStorage.setItem('theme', newTheme);
 }
 
-// Load Theme on Page Load
+// Load Theme
 window.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);

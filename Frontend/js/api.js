@@ -353,6 +353,41 @@ class API {
       body: JSON.stringify({ count, duration })
     });
   }
+  // js/api.js - Add these new methods to your existing API class
+
+// Add these methods to the API class:
+
+// Check if user exists
+async checkUser(email, phone) {
+  return this.request('/auth/check-user', {
+    method: 'POST',
+    body: JSON.stringify({ email, phone })
+  });
+}
+
+// Login with password
+async loginWithPassword(email, phone, password) {
+  return this.request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, phone, password })
+  });
+}
+
+// Updated: Send OTP (only for registration)
+async sendOTP(email, phone) {
+  return this.request('/auth/send-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, phone })
+  });
+}
+
+// Updated: Verify OTP with password (for registration)
+async verifyOTP(email, phone, otp, password) {
+  return this.request('/auth/verify-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, phone, otp, password })
+  });
+}
 }
 
 // Export singleton instance

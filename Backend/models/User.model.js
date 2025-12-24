@@ -1,4 +1,4 @@
-// models/User.model.js - User Schema (Fixed duplicate index warning)
+// models/User.model.js - User Schema with Password
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
@@ -18,7 +18,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     trim: true,
-    // Removed duplicate index - will be created via schema.index() below
+  },
+  password: {
+    type: String,
+    required: true, // Password is required for all users
   },
   subscriptionType: {
     type: String,
@@ -30,7 +33,7 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   subscriptionPlan: {
-    duration: String, // '1M', '6M', '1Y'
+    duration: String,
     amountPaid: Number,
     startDate: Date
   },
@@ -50,7 +53,6 @@ const userSchema = new mongoose.Schema({
     code: String,
     usedAt: Date
   },
-  // User Details
   name: String,
   profession: {
     type: String,
@@ -65,12 +67,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     maxlength: 50
   },
-  // Selected Exam
   selectedExam: {
     type: String,
     enum: ['JEE', 'NEET']
   },
-  // Daily Usage Tracking
   dailyUsage: {
     date: {
       type: Date,
@@ -92,13 +92,11 @@ const userSchema = new mongoose.Schema({
       default: 0
     }
   },
-  // Add ongoing mock test tracking
   ongoingMockTest: {
     mockTestId: mongoose.Schema.Types.ObjectId,
     startedAt: Date,
     expiresAt: Date
   },
-  // Attempted Questions (永久記録)
   attemptedQuestions: [{
     questionId: mongoose.Schema.Types.ObjectId,
     subject: String,
@@ -106,13 +104,12 @@ const userSchema = new mongoose.Schema({
     topic: String,
     isCorrect: Boolean,
     attemptedAt: Date,
-    timeTaken: Number // seconds
+    timeTaken: Number
   }],
-  // Mock Test Records
   mockTestRecords: [{
     mockTestId: mongoose.Schema.Types.ObjectId,
     mockTestName: String,
-    exam: String, // 'JEE' or 'NEET'
+    exam: String,
     status: {
       type: String,
       enum: ['attempted', 'unattempted'],
@@ -143,22 +140,18 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create index for email account limit check (single definition)
 userSchema.index({ email: 1 });
 
-// Check if email has reached account limit (max 3)
 userSchema.statics.checkAccountLimit = async function(email) {
   const count = await this.countDocuments({ email });
   return count < 3;
 };
 
-// Reset daily limits at midnight IST
 userSchema.methods.checkAndResetDailyLimits = function() {
   const now = new Date();
   const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const lastReset = new Date(this.dailyUsage.date);
   
-  // Check if it's a new day in IST
   if (istNow.toDateString() !== lastReset.toDateString()) {
     this.dailyUsage = {
       date: istNow,
@@ -172,14 +165,12 @@ userSchema.methods.checkAndResetDailyLimits = function() {
   return false;
 };
 
-// Check subscription validity
 userSchema.methods.isSubscriptionActive = function() {
   if (this.subscriptionType === 'free') return true;
   if (!this.subscriptionExpiryDate) return false;
   return new Date() < new Date(this.subscriptionExpiryDate);
 };
 
-// Get daily limits based on subscription
 userSchema.methods.getDailyLimits = function() {
   const limits = {
     free: {

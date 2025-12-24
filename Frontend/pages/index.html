@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body class="login-page">
-    <!-- Loading Spinner -->
     <div id="loading-spinner" class="loading-spinner">
         <div class="spinner"></div>
     </div>
@@ -38,32 +37,62 @@
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
                         <input type="tel" id="phone" name="phone" placeholder="9876543210" pattern="[0-9]{10}" required>
-                        <small>For security purposes only (encrypted)</small>
+                        <small>10-digit mobile number</small>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block">
-                        Send OTP
+                        Continue
                     </button>
                 </form>
             </div>
 
-            <!-- Step 2: Verify OTP -->
+            <!-- Step 2: Password Login (for existing users) -->
+            <div id="step-password" class="login-step">
+                <div class="otp-header">
+                    <button type="button" class="btn-back" onclick="backFromPassword()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 18L2 10L10 2L11.4 3.4L5.8 9H18V11H5.8L11.4 16.6L10 18Z"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <h3>Welcome Back!</h3>
+                        <p>Login to <strong id="password-email"></strong></p>
+                    </div>
+                </div>
+
+                <form id="password-form" class="login-form">
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Login
+                    </button>
+
+                    <button type="button" class="btn btn-text btn-block" onclick="forgotPassword()">
+                        Forgot Password?
+                    </button>
+                </form>
+            </div>
+
+            <!-- Step 3: OTP Verification (for new registrations) -->
             <div id="step-otp" class="login-step">
                 <div class="otp-header">
-                    <button class="btn-back" onclick="backToPhoneEmail()">
+                    <button type="button" class="btn-back" onclick="backToPhoneEmail()">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M10 18L2 10L10 2L11.4 3.4L5.8 9H18V11H5.8L11.4 16.6L10 18Z"/>
                         </svg>
                     </button>
                     <div>
                         <h3>Verify OTP</h3>
-                        <p id="otp-sent-message">OTP sent to <strong id="otp-email"></strong></p>
+                        <p id="otp-instruction">OTP sent to <strong id="otp-email"></strong></p>
                     </div>
                 </div>
 
                 <form id="otp-form" class="login-form">
                     <div class="form-group">
-                        <label for="otp">Enter 6-digit OTP</label>
+                        <label>Enter 6-digit OTP</label>
                         <div class="otp-input-group">
                             <input type="text" maxlength="1" class="otp-digit" data-index="0">
                             <input type="text" maxlength="1" class="otp-digit" data-index="1">
@@ -75,8 +104,14 @@
                         <small>OTP expires in <span id="otp-timer">10:00</span></small>
                     </div>
 
+                    <div class="form-group" id="otp-password-group" style="display: none;">
+                        <label for="otp-password">Create Password</label>
+                        <input type="password" id="otp-password" placeholder="Enter password (min 6 characters)" minlength="6" required>
+                        <small>You'll use this password for future logins</small>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-block">
-                        Verify & Continue
+                        Complete Registration
                     </button>
 
                     <button type="button" class="btn btn-text btn-block" onclick="resendOTP()">
@@ -85,22 +120,12 @@
                 </form>
             </div>
 
-            <!-- Step 3: Select Account (if multiple exist) -->
+            <!-- Step 4: Select Account (if multiple exist) -->
             <div id="step-select-account" class="login-step">
                 <h3>Select Account</h3>
                 <p class="text-muted">You have multiple accounts. Please select one:</p>
                 
                 <div id="accounts-list" class="accounts-list"></div>
-
-                <div class="new-account-option">
-                    <p class="text-muted">Or create a new account:</p>
-                    <button class="btn btn-outline btn-block" onclick="createNewAccount()">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M10 2C10.5523 2 11 2.44772 11 3V9H17C17.5523 9 18 9.44772 18 10C18 10.5523 17.5523 11 17 11H11V17C11 17.5523 10.5523 18 10 18C9.44772 18 9 17.5523 9 17V11H3C2.44772 11 2 10.5523 2 10C2 9.44772 2.44772 9 3 9H9V3C9 2.44772 9.44772 2 10 2Z"/>
-                        </svg>
-                        Create New Account
-                    </button>
-                </div>
             </div>
 
             <!-- Footer Links -->
