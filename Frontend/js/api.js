@@ -1,26 +1,24 @@
-// js/api.js - API Communication Layer with Fixed CORS Handling
+// js/api.js - Fixed with Request Timeout and Better Error Handling
 const API_URL = 'https://zeta-exams-backend.vercel.app/api';
 
 class API {
   constructor() {
     this.baseURL = API_URL;
     this.token = localStorage.getItem('authToken');
+    this.timeout = 30000; // 30 second timeout
   }
 
-  // Set auth token
   setToken(token) {
     this.token = token;
     localStorage.setItem('authToken', token);
   }
 
-  // Clear auth token
   clearToken() {
     this.token = null;
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
   }
 
-  // Get headers with proper CORS configuration
   getHeaders(isJson = true) {
     const headers = {
       'Accept': 'application/json',
@@ -37,7 +35,28 @@ class API {
     return headers;
   }
 
-  // Generic request handler with better error handling
+  // Fetch with timeout
+  async fetchWithTimeout(url, options = {}, timeout = this.timeout) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - server took too long to respond');
+      }
+      throw error;
+    }
+  }
+
+  // Generic request handler
   async request(endpoint, options = {}) {
     try {
       const url = `${this.baseURL}${endpoint}`;
@@ -45,13 +64,15 @@ class API {
       const config = {
         ...options,
         headers: this.getHeaders(options.body !== undefined),
-        credentials: 'include', // Important for CORS
-        mode: 'cors', // Explicitly set CORS mode
+        credentials: 'omit', // Changed from 'include' - Vercel doesn't need credentials
+        mode: 'cors',
       };
 
       console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
       
-      const response = await fetch(url, config);
+      const response = await this.fetchWithTimeout(url, config);
+
+      console.log(`📡 Response Status: ${response.status}`);
 
       // Handle different response types
       let data;
@@ -61,39 +82,50 @@ class API {
         data = await response.json();
       } else {
         const text = await response.text();
-        // Try to parse as JSON anyway
+        console.log('📄 Raw Response:', text);
         try {
           data = JSON.parse(text);
         } catch {
+          if (!response.ok) {
+            throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
+          }
           data = { message: text || 'No response data' };
         }
       }
 
       if (!response.ok) {
-        // Handle specific HTTP errors
+        console.error('❌ API Error Response:', data);
+        
+        // Handle 401 - Unauthorized
         if (response.status === 401) {
-          // Unauthorized - clear token and redirect to login
           this.clearToken();
-          if (window.location.pathname !== '/pages/login.html' && 
-              window.location.pathname !== '/pages/index.html') {
-            window.location.href = '/pages/login.html';
+          if (window.location.pathname !== '/pages/index.html' && 
+              !window.location.pathname.includes('login') &&
+              !window.location.pathname.includes('admin-login')) {
+            window.location.href = '/pages/index.html';
           }
         }
         
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(data.message || `Request failed with status ${response.status}`);
       }
 
+      console.log('✅ API Success:', data);
       return data;
+
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('❌ API Error:', error);
       
       // Provide user-friendly error messages
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to server. Please check your internet connection.');
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please check your connection and try again.');
       }
       
-      if (error.name === 'TypeError' && error.message.includes('CORS')) {
-        throw new Error('Connection blocked. Please try again or contact support.');
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Cannot reach server. Please check your internet connection.');
+      }
+      
+      if (error.name === 'TypeError') {
+        throw new Error('Network error. Please try again.');
       }
       
       throw error;
@@ -346,7 +378,7 @@ function saveCurrentUser(user) {
 function logout() {
   api.clearToken();
   localStorage.clear();
-  window.location.href = '/pages/login.html';
+  window.location.href = '/pages/index.html';
 }
 
 // Helper: Show toast notification
