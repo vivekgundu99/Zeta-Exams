@@ -14,6 +14,12 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
+const DURATION_MAP = {
+  '1M': 30,
+  '6M': 180,
+  '1Y': 365
+};
+
 // POST /api/payment/create-order
 router.post('/create-order', async (req, res) => {
   try {
@@ -82,13 +88,7 @@ router.post('/verify', async (req, res) => {
     }
 
     // Calculate plan duration
-    const durationMap = {
-      '1M': 30,
-      '6M': 180,
-      '1Y': 365
-    };
-
-    const durationDays = durationMap[duration];
+    const durationDays = DURATION_MAP[duration];
     const startDate = new Date();
     const expiryDate = new Date(startDate);
     expiryDate.setDate(expiryDate.getDate() + durationDays);
@@ -279,144 +279,4 @@ router.post('/refund/calculate', async (req, res) => {
   }
 });
 
-// routes/subscription.routes.js - Subscription & Gift Code Routes
-import { GiftCode } from '../models/Others.js';
-
-const subRouter = express.Router();
-subRouter.use(authMiddleware);
-
-// POST /api/subscription/apply-giftcode
-subRouter.post('/apply-giftcode', async (req, res) => {
-  try {
-    const { code } = req.body;
-
-    if (!code || code.length !== 12) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid gift code format'
-      });
-    }
-
-    // Find gift code
-    const giftCode = await GiftCode.findOne({
-      code: code.toUpperCase(),
-      isUsed: false
-    });
-
-    if (!giftCode) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid or already used gift code'
-      });
-    }
-
-    // Calculate expiry date based on duration
-    const durationMap = {
-      '1M': 30,
-      '6M': 180,
-      '1Y': 365
-    };
-
-    const durationDays = durationMap[giftCode.duration];
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + durationDays);
-
-    // Update user
-    const user = await User.findById(req.userId);
-    user.subscriptionType = 'gold';
-    user.subscriptionExpiryDate = expiryDate;
-    user.isGiftCodeUsed = true;
-    user.giftCodeDetails = {
-      code: giftCode.code,
-      usedAt: new Date()
-    };
-    await user.save();
-
-    // Mark gift code as used
-    giftCode.isUsed = true;
-    giftCode.usedBy = req.userId;
-    giftCode.usedAt = new Date();
-    await giftCode.save();
-
-    res.json({
-      success: true,
-      message: 'Gift code applied successfully',
-      subscription: {
-        type: 'gold',
-        expiryDate,
-        duration: giftCode.duration
-      }
-    });
-
-  } catch (error) {
-    console.error('Apply Gift Code Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to apply gift code'
-    });
-  }
-});
-
-// GET /api/subscription/plans
-subRouter.get('/plans', async (req, res) => {
-  try {
-    const plans = {
-      free: {
-        name: 'Free',
-        price: 0,
-        features: {
-          questionsPerDay: 50,
-          chapterTests: 0,
-          mockTests: 0,
-          formulas: false,
-          flashcards: false
-        }
-      },
-      silver: {
-        name: 'Silver',
-        plans: [
-          { duration: '1M', mrp: 100, price: 49, savings: 51 },
-          { duration: '6M', mrp: 500, price: 249, savings: 50 },
-          { duration: '1Y', mrp: 1000, price: 399, savings: 60 }
-        ],
-        features: {
-          questionsPerDay: 200,
-          chapterTests: 10,
-          mockTests: 0,
-          formulas: false,
-          flashcards: false
-        }
-      },
-      gold: {
-        name: 'Gold',
-        plans: [
-          { duration: '1M', mrp: 600, price: 299, savings: 50 },
-          { duration: '6M', mrp: 2500, price: 1299, savings: 48 },
-          { duration: '1Y', mrp: 5000, price: 2000, savings: 60 }
-        ],
-        features: {
-          questionsPerDay: 5000,
-          chapterTests: 50,
-          mockTests: 8,
-          formulas: true,
-          flashcards: true
-        }
-      }
-    };
-
-    res.json({
-      success: true,
-      plans
-    });
-
-  } catch (error) {
-    console.error('Get Plans Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch plans'
-    });
-  }
-});
-
-export { subRouter as subscriptionRoutes };
 export default router;

@@ -1,8 +1,8 @@
-// server.js - Main Backend Entry Point
+// server.js - Serverless-Optimized Entry Point
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB } from './config/database.js';
+import mongoose from 'mongoose';
 
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
@@ -47,27 +47,54 @@ app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Connect to MongoDB (only once, not on every request)
-let isConnected = false;
+// ===== SERVERLESS DATABASE CONNECTION =====
+// Cached connection for serverless functions
+let cachedDb = null;
 
-const connectToDatabase = async () => {
-  if (isConnected) {
-    console.log('Using existing database connection');
-    return;
+async function connectToDatabase() {
+  if (cachedDb && mongoose.connection.readyState === 1) {
+    console.log('=> Using existing database connection');
+    return cachedDb;
   }
+
+  console.log('=> Creating new database connection');
   
   try {
-    await connectDB();
-    isConnected = true;
+    const connection = await mongoose.connect(process.env.MONGODB_URI, {
+      // Serverless-optimized settings
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      maxPoolSize: 10, // Limit connection pool for serverless
+      minPoolSize: 1,
+      maxIdleTimeMS: 10000, // Close idle connections quickly
+      // Remove deprecated options
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    cachedDb = connection;
+    console.log(`✅ MongoDB Connected: ${connection.connection.host}`);
+    
+    return connection;
+  } catch (error) {
+    console.error('❌ MongoDB connection failed:', error.message);
+    cachedDb = null;
+    throw error;
+  }
+}
+
+// Middleware to ensure DB connection before each request
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
   } catch (error) {
     console.error('Database connection error:', error);
+    res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please try again.'
+    });
   }
-};
-
-// Middleware to ensure DB connection
-app.use(async (req, res, next) => {
-  await connectToDatabase();
-  next();
 });
 
 // Health Check
@@ -75,7 +102,8 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'OK',
     message: 'Zeta Exams API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
   });
 });
 
@@ -83,7 +111,8 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    timezone: 'Asia/Kolkata'
+    timezone: 'Asia/Kolkata',
+    dbStatus: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected'
   });
 });
 
@@ -117,13 +146,14 @@ app.use((req, res) => {
   });
 });
 
-// For local development
+// For local development only
 if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
+    await connectToDatabase();
     console.log(`Server running on port ${PORT}`);
   });
 }
 
-// Export for Vercel
+// Export for Vercel (serverless)
 export default app;
