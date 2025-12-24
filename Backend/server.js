@@ -61,15 +61,11 @@ async function connectToDatabase() {
   
   try {
     const connection = await mongoose.connect(process.env.MONGODB_URI, {
-      // Serverless-optimized settings
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      maxPoolSize: 10, // Limit connection pool for serverless
+      maxPoolSize: 10,
       minPoolSize: 1,
-      maxIdleTimeMS: 10000, // Close idle connections quickly
-      // Remove deprecated options
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      maxIdleTimeMS: 10000,
     });
 
     cachedDb = connection;
@@ -151,7 +147,7 @@ if (process.env.NODE_ENV !== 'production') {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, async () => {
     await connectToDatabase();
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 }
 

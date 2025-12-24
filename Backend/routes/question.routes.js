@@ -1,253 +1,317 @@
+// routes/question.routes.js - Question Practice Routes
 import express from 'express';
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
-import { Payment } from '../models/Others.js';
+import Question from '../models/Question.model.js';
 import User from '../models/User.model.js';
 import { authMiddleware } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 router.use(authMiddleware);
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
-
-const DURATION_MAP = {
-  '1M': 30,
-  '6M': 180,
-  '1Y': 365
-};
-
-// CREATE ORDER
-router.post('/create-order', async (req, res) => {
+// GET /api/questions/filters - Get available subjects for an exam
+router.get('/filters', async (req, res) => {
   try {
-    const { planType, duration, amount } = req.body;
+    const { exam } = req.query;
 
-    if (!planType || !duration || !amount) {
+    if (!exam) {
       return res.status(400).json({
         success: false,
-        message: 'Plan type, duration, and amount are required'
+        message: 'Exam parameter is required'
       });
     }
 
-    const order = await razorpay.orders.create({
-      amount: amount * 100,
-      currency: 'INR',
-      receipt: `receipt_${Date.now()}`,
-      notes: {
-        userId: req.userId,
-        planType,
-        duration
-      }
+    const subjects = await Question.distinct('subject', { exam, isActive: true });
+
+    res.json({
+      success: true,
+      subjects
+    });
+
+  } catch (error) {
+    console.error('Get Filters Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch filters'
+    });
+  }
+});
+
+// GET /api/questions/chapters - Get chapters for subject
+router.get('/chapters', async (req, res) => {
+  try {
+    const { exam, subject } = req.query;
+
+    if (!exam || !subject) {
+      return res.status(400).json({
+        success: false,
+        message: 'Exam and subject are required'
+      });
+    }
+
+    const chapters = await Question.distinct('chapter', { 
+      exam, 
+      subject, 
+      isActive: true 
     });
 
     res.json({
       success: true,
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      keyId: process.env.RAZORPAY_KEY_ID
+      chapters
     });
+
   } catch (error) {
-    console.error('Create Order Error:', error);
+    console.error('Get Chapters Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create payment order'
+      message: 'Failed to fetch chapters'
     });
   }
 });
 
-// VERIFY PAYMENT
-router.post('/verify', async (req, res) => {
+// GET /api/questions/topics - Get topics for chapter
+router.get('/topics', async (req, res) => {
   try {
-    const {
-      razorpay_payment_id,
-      razorpay_order_id,
-      razorpay_signature,
-      planType,
-      duration,
-      amount
-    } = req.body;
+    const { exam, subject, chapter } = req.query;
 
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest('hex');
-
-    if (expectedSignature !== razorpay_signature) {
+    if (!exam || !subject || !chapter) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid payment signature'
+        message: 'Exam, subject, and chapter are required'
       });
     }
 
-    const durationDays = DURATION_MAP[duration];
-    const startDate = new Date();
-    const expiryDate = new Date(startDate);
-    expiryDate.setDate(expiryDate.getDate() + durationDays);
-
-    const payment = await Payment.create({
-      userId: req.userId,
-      razorpayPaymentId: razorpay_payment_id,
-      razorpayOrderId: razorpay_order_id,
-      razorpaySignature: razorpay_signature,
-      amountPaid: amount,
-      planType,
-      planDuration: duration,
-      planDurationDays: durationDays,
-      planStartDate: startDate,
-      planExpiryDate: expiryDate,
-      status: 'success'
-    });
-
-    await User.findByIdAndUpdate(req.userId, {
-      subscriptionType: planType,
-      subscriptionExpiryDate: expiryDate,
-      subscriptionPlan: {
-        duration,
-        amountPaid: amount,
-        startDate
-      }
+    const topics = await Question.distinct('topic', { 
+      exam, 
+      subject, 
+      chapter, 
+      isActive: true 
     });
 
     res.json({
       success: true,
-      message: 'Payment verified successfully',
-      subscription: {
-        type: planType,
-        expiryDate
-      }
+      topics
     });
+
   } catch (error) {
-    console.error('Verify Payment Error:', error);
+    console.error('Get Topics Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to verify payment'
+      message: 'Failed to fetch topics'
     });
   }
 });
 
-// WEBHOOK
-router.post('/webhook', async (req, res) => {
+// POST /api/questions/practice - Get practice questions
+router.post('/practice', async (req, res) => {
   try {
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-
-    const digest = crypto
-      .createHmac('sha256', secret)
-      .update(JSON.stringify(req.body))
-      .digest('hex');
-
-    if (digest !== req.headers['x-razorpay-signature']) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid signature'
-      });
-    }
-
-    const { event, payload } = req.body;
-    const paymentEntity = payload?.payment?.entity;
-
-    if (!paymentEntity) return res.json({ status: 'ok' });
-
-    const paymentRecord = await Payment.findOne({
-      razorpayPaymentId: paymentEntity.id
-    });
-
-    if (!paymentRecord) return res.json({ status: 'ok' });
-
-    if (event === 'payment.captured') {
-      paymentRecord.status = 'success';
-      await paymentRecord.save();
-
-      await User.findByIdAndUpdate(paymentRecord.userId, {
-        subscriptionType: paymentRecord.planType,
-        subscriptionExpiryDate: paymentRecord.planExpiryDate,
-        subscriptionPlan: {
-          duration: paymentRecord.planDuration,
-          amountPaid: paymentRecord.amountPaid,
-          startDate: paymentRecord.planStartDate
-        }
-      });
-    }
-
-    if (event === 'payment.failed') {
-      paymentRecord.status = 'failed';
-      await paymentRecord.save();
-    }
-
-    res.json({ status: 'ok' });
-  } catch (error) {
-    console.error('Webhook Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Webhook processing failed'
-    });
-  }
-});
-
-// REFUND CALCULATE
-router.post('/refund/calculate', async (req, res) => {
-  try {
+    const { exam, subject, chapters, topics, questionTypes, offset = 0 } = req.body;
     const user = await User.findById(req.userId);
 
-    if (!user || user.subscriptionType === 'free') {
-      return res.status(400).json({
-        success: false,
-        message: 'No active paid subscription found'
-      });
+    // Check and reset daily limits
+    user.checkAndResetDailyLimits();
+    await user.save();
+
+    // Build query
+    const query = {
+      exam,
+      subject,
+      isActive: true
+    };
+
+    if (chapters && chapters.length > 0) {
+      query.chapter = { $in: chapters };
     }
 
-    if (user.isGiftCodeUsed) {
-      return res.status(400).json({
-        success: false,
-        message: 'Refund not available for gift code subscriptions'
-      });
+    if (topics && topics.length > 0 && !topics.includes('all')) {
+      query.topic = { $in: topics };
     }
 
-    const payment = await Payment.findOne({
-      userId: req.userId,
-      status: 'success',
-      refundUsed: false
-    }).sort({ createdAt: -1 });
-
-    if (!payment) {
-      return res.status(400).json({
-        success: false,
-        message: 'No eligible payment found'
-      });
+    if (questionTypes && questionTypes.length > 0 && !questionTypes.includes('all')) {
+      query.questionType = { $in: questionTypes };
     }
 
-    const now = new Date();
-    const totalDays =
-      (payment.planExpiryDate - payment.planStartDate) / 86400000;
-    const usedDays = (now - payment.planStartDate) / 86400000;
-    const usedPercent = (usedDays / totalDays) * 100;
+    // Exclude already attempted questions
+    const attemptedIds = user.attemptedQuestions.map(q => q.questionId);
+    query._id = { $nin: attemptedIds };
 
-    let refundPercent = 0;
-    if (usedPercent <= 10) refundPercent = 60;
-    else if (usedPercent <= 40) refundPercent = 45;
-    else if (usedPercent <= 60) refundPercent = 30;
-
-    const refundAmount = Math.floor(
-      (payment.amountPaid * refundPercent) / 100
-    );
+    // Fetch 30 questions
+    const questions = await Question.find(query)
+      .select('-createdBy -solution -solutionImageUrl -__v')
+      .skip(offset)
+      .limit(30);
 
     res.json({
       success: true,
-      eligible: refundPercent > 0,
-      refundPercent,
-      refundAmount,
-      amountPaid: payment.amountPaid,
-      usedDays: Math.floor(usedDays),
-      totalDays: Math.floor(totalDays)
+      questions
     });
+
   } catch (error) {
-    console.error('Calculate Refund Error:', error);
+    console.error('Get Practice Questions Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to calculate refund'
+      message: 'Failed to fetch questions'
+    });
+  }
+});
+
+// POST /api/questions/verify-answer - Verify user's answer
+router.post('/verify-answer', async (req, res) => {
+  try {
+    const { questionId, userAnswer, timeTaken } = req.body;
+    const user = await User.findById(req.userId);
+
+    // Check limits
+    user.checkAndResetDailyLimits();
+    const limits = user.getDailyLimits();
+
+    if (user.dailyUsage.questionsAttempted >= limits.questions) {
+      return res.status(403).json({
+        success: false,
+        message: `Daily limit of ${limits.questions} questions reached. Upgrade your plan.`,
+        limitReached: true
+      });
+    }
+
+    const question = await Question.findById(questionId);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    // Check answer
+    let isCorrect = false;
+
+    if (question.questionType === 'MCQ') {
+      isCorrect = userAnswer.toUpperCase() === question.correctAnswer.toUpperCase();
+    } else {
+      // Numerical - normalize and compare
+      const normalizedUser = parseFloat(userAnswer).toString();
+      const normalizedCorrect = parseFloat(question.correctAnswer).toString();
+      isCorrect = normalizedUser === normalizedCorrect;
+    }
+
+    // Track attempt
+    user.attemptedQuestions.push({
+      questionId: question._id,
+      subject: question.subject,
+      chapter: question.chapter,
+      topic: question.topic,
+      isCorrect,
+      attemptedAt: new Date(),
+      timeTaken
+    });
+
+    user.dailyUsage.questionsAttempted += 1;
+    await user.save();
+
+    res.json({
+      success: true,
+      isCorrect,
+      correctAnswer: question.correctAnswer,
+      questionText: question.questionText,
+      options: question.options || null
+    });
+
+  } catch (error) {
+    console.error('Verify Answer Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to verify answer'
+    });
+  }
+});
+
+// POST /api/questions/generate-test - Generate small test (10 questions)
+router.post('/generate-test', async (req, res) => {
+  try {
+    const { exam, subject, chapters, topics } = req.body;
+    const user = await User.findById(req.userId);
+
+    // Check limits
+    user.checkAndResetDailyLimits();
+    const limits = user.getDailyLimits();
+
+    if (user.dailyUsage.chapterTestsGenerated >= limits.chapterTests) {
+      return res.status(403).json({
+        success: false,
+        message: `Daily chapter test limit reached. ${
+          user.subscriptionType === 'free' ? 'Upgrade to Silver or Gold' : 
+          'Upgrade to Gold for more tests'
+        }`,
+        limitReached: true
+      });
+    }
+
+    // Build query
+    const query = {
+      exam,
+      subject,
+      isActive: true
+    };
+
+    if (chapters && chapters.length > 0) {
+      query.chapter = { $in: chapters };
+    }
+
+    if (topics && topics.length > 0 && !topics.includes('all')) {
+      query.topic = { $in: topics };
+    }
+
+    // Get 10 random questions
+    const questions = await Question.aggregate([
+      { $match: query },
+      { $sample: { size: 10 } }
+    ]);
+
+    if (questions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No questions found for the selected filters'
+      });
+    }
+
+    // Increment test count
+    user.dailyUsage.chapterTestsGenerated += 1;
+    await user.save();
+
+    res.json({
+      success: true,
+      questions
+    });
+
+  } catch (error) {
+    console.error('Generate Test Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate test'
+    });
+  }
+});
+
+// GET /api/questions/:id/image - Get question image (if exists)
+router.get('/:id/image', async (req, res) => {
+  try {
+    const question = await Question.findById(req.params.id);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      imageUrl: question.questionImageUrl
+    });
+
+  } catch (error) {
+    console.error('Get Question Image Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch image'
     });
   }
 });

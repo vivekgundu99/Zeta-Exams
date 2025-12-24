@@ -7,7 +7,19 @@ import { encryptPhone } from '../config/database.js';
 import jwt from 'jsonwebtoken';
 
 const router = express.Router();
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Initialize Resend only when needed (lazy initialization)
+let resendClient = null;
+const getResendClient = () => {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY is not configured in environment variables');
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+};
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -23,6 +35,14 @@ router.post('/send-otp', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Email and phone are required'
+      });
+    }
+
+    // Validate phone (10 digits)
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number must be 10 digits'
       });
     }
 
@@ -46,34 +66,51 @@ router.post('/send-otp', async (req, res) => {
     await OTP.create({ email, otp, expiresAt });
 
     // Send OTP via Resend
-    await resend.emails.send({
-      from: 'Zeta Exams <noreply@zetaexams.com>',
-      to: email,
-      subject: 'Your Zeta Exams OTP',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4F46E5;">Welcome to Zeta Exams!</h2>
-          <p>Your One-Time Password (OTP) is:</p>
-          <div style="background: #F3F4F6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-            <h1 style="color: #4F46E5; letter-spacing: 8px; margin: 0;">${otp}</h1>
+    try {
+      const resend = getResendClient();
+      await resend.emails.send({
+        from: 'Zeta Exams <noreply@zetaexams.com>',
+        to: email,
+        subject: 'Your Zeta Exams OTP',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4F46E5;">Welcome to Zeta Exams!</h2>
+            <p>Your One-Time Password (OTP) is:</p>
+            <div style="background: #F3F4F6; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
+              <h1 style="color: #4F46E5; letter-spacing: 8px; margin: 0;">${otp}</h1>
+            </div>
+            <p style="color: #6B7280;">This OTP will expire in 10 minutes.</p>
+            <p style="color: #6B7280; font-size: 14px;">If you didn't request this, please ignore this email.</p>
           </div>
-          <p style="color: #6B7280;">This OTP will expire in 10 minutes.</p>
-          <p style="color: #6B7280; font-size: 14px;">If you didn't request this, please ignore this email.</p>
-        </div>
-      `
-    });
+        `
+      });
 
-    res.json({
-      success: true,
-      message: 'OTP sent successfully',
-      expiresAt
-    });
+      res.json({
+        success: true,
+        message: 'OTP sent successfully',
+        expiresAt
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      
+      // For development: Return OTP in response if email fails
+      if (process.env.NODE_ENV === 'development') {
+        return res.json({
+          success: true,
+          message: 'OTP generated (email service unavailable)',
+          expiresAt,
+          otp: otp // Only in development!
+        });
+      }
+      
+      throw new Error('Failed to send OTP email. Please try again.');
+    }
 
   } catch (error) {
     console.error('Send OTP Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send OTP'
+      message: error.message || 'Failed to send OTP'
     });
   }
 });
