@@ -1,7 +1,7 @@
-// models/Others.js - Consolidated models for GiftCode, OTP, Feedback, Admin, Payment, FormulaSheet, MockTest
+// models/Others.js - Complete Fixed Version
 import mongoose from 'mongoose';
 
-// Admin Schema
+// ===== ADMIN SCHEMA =====
 const adminSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -31,7 +31,7 @@ const adminSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// OTP Schema
+// ===== OTP SCHEMA =====
 const otpSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -55,14 +55,15 @@ const otpSchema = new mongoose.Schema({
 
 otpSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// GiftCode Schema
+// ===== GIFT CODE SCHEMA =====
 const giftCodeSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
     unique: true,
     uppercase: true,
-    length: 12
+    minlength: 12,
+    maxlength: 12
   },
   duration: {
     type: String,
@@ -86,7 +87,7 @@ const giftCodeSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Payment Schema
+// ===== PAYMENT SCHEMA =====
 const paymentSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -135,7 +136,7 @@ const paymentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Feedback Schema
+// ===== FEEDBACK SCHEMA =====
 const feedbackSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -168,7 +169,7 @@ const feedbackSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// FormulaSheet Schema
+// ===== FORMULA SHEET SCHEMA =====
 const formulaSheetSchema = new mongoose.Schema({
   exam: {
     type: String,
@@ -196,7 +197,7 @@ const formulaSheetSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// MockTest Schema
+// ===== MOCK TEST SCHEMA =====
 const mockTestSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -230,6 +231,7 @@ const mockTestSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// ===== EXPORTS =====
 export const Admin = mongoose.model('Admin', adminSchema);
 export const OTP = mongoose.model('OTP', otpSchema);
 export const GiftCode = mongoose.model('GiftCode', giftCodeSchema);
